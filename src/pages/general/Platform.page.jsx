@@ -14,7 +14,7 @@ const PlatformPage = () => {
   const { search } = useLocation(); // reserved for future query parameters
 
   /**
-   * Navigate to BIM360 projects list.
+   * Navigate to BIM 360 projects list.
    */
   const goToBim360 = () => navigate('/bim360/projects' + search);
 
