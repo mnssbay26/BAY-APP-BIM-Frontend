@@ -10,7 +10,7 @@ import BayerHeader from '../../components/general/general.pages.header.jsx';
  * @returns {JSX.Element}
  */
 const LoginPage = () => {
-  const [cookies] = useCookies(['token']);
+  const [cookies] = useCookies(['access_token']);
   const navigate = useNavigate();
 
   const CLIENT_ID = import.meta.env.VITE_API_CLIENT_ID;
