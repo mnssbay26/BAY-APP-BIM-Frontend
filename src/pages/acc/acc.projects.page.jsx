@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 
 import BayerHeader from '../../components/general/general.pages.header.jsx';
 
+const BACKEND_BASE_URL = import.meta.env.VITE_API_BACKEND_BASE_URL;
+
 /**
  * Page for listing ACC projects and allowing navigation to details.
  * @returns {JSX.Element}
@@ -15,7 +17,7 @@ const AccProjectsPage = () => {
     const fetchProjects = async () => {
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_API_BACKEND_BASE_URL}/acc/projects`,
+          `${BACKEND_BASE_URL}/acc/projects`,
           { method: 'GET', credentials: 'include' }
         );
 

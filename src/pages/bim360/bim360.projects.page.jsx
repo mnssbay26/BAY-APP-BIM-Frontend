@@ -1,41 +1,96 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 import BayerHeader from '../../components/general/general.pages.header.jsx';
 
 /**
- * Home page component with app introduction and navigation to login.
+ * Page for listing BIM360 projects and allowing navigation to details.
  * @returns {JSX.Element}
  */
-const HomePage = () => {
-  const navigate = useNavigate();
+const Bim360ProjectsPage = () => {
+  const [projects, setProjects] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BACKEND_BASE_URL}/bim360/projects`,
+          { method: 'GET', credentials: 'include' }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch BIM360 projects');
+        }
+
+        const { data } = await response.json();
+        console.debug('Fetched BIM360 projects:', data.projects);
+
+        const bimProjects = data.projects.filter(
+          (project) => project.attributes.extension.data.projectType === 'BIM360'
+        );
+
+        setProjects(bimProjects);
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+
+    fetchProjects();
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white">
       <BayerHeader />
 
-      <main className="container mx-auto flex flex-col md:flex-row items-center justify-between px-6 py-20 gap-10 mt-16">
-        {/* Title Section */}
-        <div className="w-full md:w-1/2 text-center">
+      <main className="container mx-auto flex flex-col md:flex-row items-center px-6 py-20 gap-10">
+        {/* Left Column */}
+        <div className="w-full md:w-1/2 space-y-4 text-center">
           <h1 className="text-5xl font-bold text-gray-900">BAYER BIM APP</h1>
+          <p className="text-2xl text-gray-700">Select your project to continue</p>
+          {error && (
+            <p className="text-red-600 mt-4">Oops, something went wrong: {error}</p>
+          )}
         </div>
 
-        {/* Description and Call-to-Action */}
-        <div className="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left space-y-6">
-          <p className="text-lg text-gray-700 leading-relaxed">
-            The Bayer APP is a web application designed to provide a seamless experience for users to interact with BIM360 & Autodesk Construction Cloud. It allows users to access reports, manage project insights, and utilize various features related to Building Information Modeling (BIM) and project management.
-          </p>
-          <button
-            onClick={() => navigate('/login')}
-            className="bg-[#10384F] text-white px-6 py-3 rounded-lg hover:bg-[#89D329] transition-colors"
-            aria-label="Get started with Bayer BIM App"
-          >
-            Get Started
-          </button>
+        {/* Right Column */}
+        <div className="w-full md:w-1/2">
+          <div className="h-[450px] overflow-y-auto">
+            <ul className="space-y-4">
+              {projects.map((project) => (
+                <li
+                  key={project.id}
+                  className="bg-gray-50 rounded-lg p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="flex-1">
+                    <h2 className="text-base font-medium text-gray-900">
+                      {project.attributes.name}
+                    </h2>
+                    {project.attributes.description && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {project.attributes.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <Link
+                    to={`/bim360/projects/${project.relationships.hub.data.id}/${project.id}`}
+                    className="ml-4 bg-[#2ea3e3] text-white text-sm font-semibold px-3 py-1 rounded-md shadow hover:bg-slate-200 hover:text-black transition-colors"
+                  >
+                    Open project
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            {!error && projects.length === 0 && (
+              <p className="text-gray-500 mt-4 text-center">No projects found.</p>
+            )}
+          </div>
         </div>
       </main>
     </div>
   );
 };
 
-export default React.memo(HomePage);
+export default React.memo(Bim360ProjectsPage);
