@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -59,8 +58,6 @@
   }
 }
 
-
-
 @layer base {
   * {
     @apply border-border;
@@ -68,4 +65,22 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.slick-slide > div {
+    padding: 0 10px; 
+    box-sizing: border-box; 
+  }
+
+
+.chart-with-dots {
+  position: relative;
+  padding-bottom: 2rem; 
+}
+
+.chart-with-dots .slick-dots {
+  position: absolute;
+  bottom: 2.0rem;
+  left: 50%;
+  transform: translateX(-50%);
 }

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 
 import BayerHeader from '../../components/general/general.pages.header.jsx';
 
+const BACKEND_BASE_URL = import.meta.env.VITE_API_BACKEND_BASE_URL;
+
 /**
  * Page for listing BIM360 projects and allowing navigation to details.
  * @returns {JSX.Element}
@@ -15,7 +17,7 @@ const Bim360ProjectsPage = () => {
     const fetchProjects = async () => {
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_API_BACKEND_BASE_URL}/bim360/projects`,
+          `${BACKEND_BASE_URL}/bim360/projects`,
           { method: 'GET', credentials: 'include' }
         );
 
@@ -84,7 +86,9 @@ const Bim360ProjectsPage = () => {
             </ul>
 
             {!error && projects.length === 0 && (
-              <p className="text-gray-500 mt-4 text-center">No projects found.</p>
+              <p className="text-gray-500 mt-4 text-center">
+                No projects found.
+              </p>
             )}
           </div>
         </div>

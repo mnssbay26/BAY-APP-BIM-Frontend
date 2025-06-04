@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCookies } from 'react-cookie';
 
-import BayerHeader from '../../components/general/general.pages.header.jsx';
+import PlatformHeader from '../../components/platform_general_components/general_platform_components/platform.access.header';
 
 /**
  * Platform selection page allowing navigation to BIM360 or ACC modules.
@@ -25,7 +25,7 @@ const PlatformPage = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-      <BayerHeader />
+      <PlatformHeader />
 
       <main className="container mx-auto flex flex-col md:flex-row items-center justify-between px-6 py-20 gap-10 mt-16">
         {/* Left Side */}
