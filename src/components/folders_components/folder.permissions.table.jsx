@@ -63,7 +63,7 @@ export default function FolderPermissionsTable({
     return p ? p.actions : [];
   };
 
-  // Render permission cell: vertical list of actions
+  //Render permission cell: vertical list of actions
   const renderPermissionCell = (actions) => {
     const has = actions.length > 0;
     return (
