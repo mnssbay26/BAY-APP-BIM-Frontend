@@ -7,7 +7,7 @@ export const generalViewer = async (urn) => {
     throw new Error("URN is required to initialize the viewer");
   }
 
-  console.log ("URN:", urn);
+  //console.log ("URN:", urn);
 
   try {
     const response = await fetch(`${BACKEND_BASE_URL}/auth/token`);

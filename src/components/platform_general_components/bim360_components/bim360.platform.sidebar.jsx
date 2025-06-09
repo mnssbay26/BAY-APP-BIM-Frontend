@@ -52,14 +52,9 @@ function BayerBim360Sidebar() {
   ]
   const foldersAndFilesItems = [
     {
-      to: `/bim360/projects/${accountId}/${projectId}/folders`,
+      to: `/bim360/projects/${accountId}/${projectId}/folder-permits`,
       icon: FaFolder,
       label: "Folder Permits",
-    },
-    {
-      to: `/bim360/projects/${accountId}/${projectId}/files`,
-      icon: FaEye,
-      label: "File preview",
     },
   ]
   const databaseItems = [

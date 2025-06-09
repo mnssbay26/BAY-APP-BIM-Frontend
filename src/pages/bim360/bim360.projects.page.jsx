@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
-import BayerHeader from '../../components/general/general.pages.header.jsx';
+import BayerLoadingOverlay from "@/components/general/general.pages.loading.jsx";
+import PlatformHeader from "@/components/platform_general_components/general_platform_components/platform.access.header.jsx"
 
-const BACKEND_BASE_URL = import.meta.env.VITE_API_BACKEND_BASE_URL;
+import { fetchBim360ProjectsData } from "../../pages/services/bim360.services.js";
 
 /**
  * Page for listing BIM360 projects and allowing navigation to details.
@@ -12,46 +13,52 @@ const BACKEND_BASE_URL = import.meta.env.VITE_API_BACKEND_BASE_URL;
 const Bim360ProjectsPage = () => {
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const response = await fetch(
-          `${BACKEND_BASE_URL}/bim360/projects`,
-          { method: 'GET', credentials: 'include' }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch BIM360 projects');
+    setLoading(true);
+    setError(null);
+    Promise.all([fetchBim360ProjectsData()])
+      .then(([projectsData]) => {
+        if (projectsData) {
+          const bimProjects = projectsData.projects.filter(
+            (project) =>
+              project.attributes.extension.data.projectType === "BIM360"
+          );
+          setProjects(bimProjects);
         }
-
-        const { data } = await response.json();
-        console.debug('Fetched BIM360 projects:', data.projects);
-
-        const bimProjects = data.projects.filter(
-          (project) => project.attributes.extension.data.projectType === 'BIM360'
-        );
-
-        setProjects(bimProjects);
-      } catch (err) {
-        setError(err.message);
-      }
-    };
-
-    fetchProjects();
+      })
+      .catch((error) => {
+        setError(error.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
+
+  if (loading) {
+    return <BayerLoadingOverlay message="Loading project details..." />;
+  }
+
+  if (error) {
+    return <div className="text-red-600">{error}</div>;
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-      <BayerHeader />
+      <PlatformHeader />
 
       <main className="container mx-auto flex flex-col md:flex-row items-center px-6 py-20 gap-10">
         {/* Left Column */}
         <div className="w-full md:w-1/2 space-y-4 text-center">
           <h1 className="text-5xl font-bold text-gray-900">BAYER BIM APP</h1>
-          <p className="text-2xl text-gray-700">Select your project to continue</p>
+          <p className="text-2xl text-gray-700">
+            Select your project to continue
+          </p>
           {error && (
-            <p className="text-red-600 mt-4">Oops, something went wrong: {error}</p>
+            <p className="text-red-600 mt-4">
+              Oops, something went wrong: {error}
+            </p>
           )}
         </div>
 

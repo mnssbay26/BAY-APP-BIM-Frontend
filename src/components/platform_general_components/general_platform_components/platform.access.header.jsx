@@ -18,24 +18,41 @@ const PlatformHeader = ({ accountId, projectId }) => {
   useEffect(() => {
     const getUserProfile = async () => {
       try {
-        const response = await fetch(`${BACKEND_BASE_URL}/user/profile`, {
-          method: "GET",
-          credentials: "include",
-        });
+        const response = await fetch(
+          `${BACKEND_BASE_URL}/general/user/profile`,
+          {
+            credentials: "include",
+          }
+        );
 
         if (!response.ok) {
-          throw new Error("Network response was not ok");
+          console.error("Error fetching user profile:");
+          setError("Error fetching user profile");
+          return;
         }
 
         const data = await response.json();
-        setUserProfile(data.user);
-      } catch (err) {
-        console.error("Error fetching user profile:", err);
-        setError("Failed to load user profile. Please try again later.");
+        setUserProfile(data.data.user.emailId);
+      } catch (error) {
+        setError(
+          error?.response?.data?.message || "Error fetching user profile"
+        );
+      }
+    };
+    getUserProfile();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setDropdownOpen(false);
       }
     };
 
-    getUserProfile();
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -81,7 +98,7 @@ const PlatformHeader = ({ accountId, projectId }) => {
           <div className="relative flex items-center gap-2 text-sm">
             {userProfile ? (
               <>
-                <span>{userProfile.emailId}</span>
+                <span>{userProfile}</span>
                 <button
                   className="focus:outline-none"
                   onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -133,4 +150,5 @@ const PlatformHeader = ({ accountId, projectId }) => {
     </>
   );
 };
+
 export default PlatformHeader;

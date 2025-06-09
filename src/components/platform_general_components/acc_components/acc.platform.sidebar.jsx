@@ -57,14 +57,9 @@ function BayerAccSidebar() {
   ]
   const foldersAndFilesItems = [
     {
-      to: `/acc/projects/${accountId}/${projectId}/folders`,
+      to: `/acc/projects/${accountId}/${projectId}/folder-permits`,
       icon: FaFolder,
       label: "Folder Permits",
-    },
-    {
-      to: `/acc/projects/${accountId}/${projectId}/files`,
-      icon: FaEye,
-      label: "File preview",
     },
   ]
   const databaseItems = [

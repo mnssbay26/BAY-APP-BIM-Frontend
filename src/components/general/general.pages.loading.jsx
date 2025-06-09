@@ -7,7 +7,7 @@ export default function BayerLoadingOverlay({ message }) {
       <img
         src="/bayerLoading.svg"
         alt="Bayer Logo"
-        className="h-18 mb-2"
+        className="h-17 mb-1"
       />
 
       {/* Mensaje de Loading */}

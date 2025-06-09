@@ -92,7 +92,7 @@ const AccProjectSubmittalsPage = () => {
       });
   }, [projectId, accountId]);
 
-  console.log("Submittals Data:", submittals);
+  //console.log("Submittals Data:", submittals);
 
   useEffect(() => {
     if (!submittals.length) {

@@ -1,19 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useCookies } from "react-cookie";
-import { User, LogOut, Settings, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-
-const backendUrl = import.meta.env.VITE_API_BACKEND_BASE_URL;
 
 /**
  * Site header component displaying login or user info after authentication.

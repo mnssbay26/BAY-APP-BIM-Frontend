@@ -64,7 +64,7 @@ export const fetchAccFederatedModel = async (projectId, accountId) => {
 
     const { data } = await response.json();
 
-    console.debug("Fetched ACC federated model:", data);
+    //console.debug("Fetched ACC federated model:", data);
 
     return data.federatedmodel ? await toBase64(data.federatedmodel) : null;
   } catch (error) {
@@ -164,7 +164,7 @@ export const fetchAccProjectSubmittals = async (projectId, accountId) => {
 
     const { data } = await response.json();
 
-    console.log("Fetched ACC project submittals:", data);
+    //console.log("Fetched ACC project submittals:", data);
 
     return data;
   } catch (error) {
