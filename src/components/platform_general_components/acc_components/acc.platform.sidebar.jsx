@@ -64,12 +64,12 @@ function BayerAccSidebar() {
   ]
   const databaseItems = [
     {
-      to: `/acc/projects/${accountId}/${projectId}/4d`,
+      to: `/acc/projects/${accountId}/${projectId}/model-database`,
       icon: FaCubes,
       label: "Model Database",
     },
     {
-      to: `/acc/projects/${accountId}/${projectId}/7d`,
+      to: `/acc/projects/${accountId}/${projectId}/digital-twin`,
       icon: FaDatabase,
       label: "Digital Twin",
     },
