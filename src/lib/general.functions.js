@@ -98,8 +98,8 @@ export const reorderRowsByDiscipline = (rows) => {
 
 export const reorderRowsByDisciplineAndGroup = (rows) => {
   const grouped = rows.reduce((acc, row) => {
-    const disciplineKey = row.Discipline || "Sin Disciplina";
-    const codeKey = row.Code || "Sin Código";
+    const disciplineKey = row.Discipline || "No Discipline";
+    const codeKey = row.Code || "No Code";
     if (!acc[disciplineKey]) acc[disciplineKey] = {};
     if (!acc[disciplineKey][codeKey]) acc[disciplineKey][codeKey] = [];
     acc[disciplineKey][codeKey].push(row);
