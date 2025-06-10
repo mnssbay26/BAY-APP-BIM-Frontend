@@ -432,8 +432,10 @@ const AccModelDatabasePage = () => {
         let successInCurrentChunk = false;
 
         while (retries < MAX_RETRIES && !successInCurrentChunk) {
-          console.log(
-            `🚀 Sending batch ${currentChunkNumber}/${totalChunks} (${
+
+          console.debug(
+            `🚀 Enviando lote ${currentChunkNumber}/${totalChunks} (${
+
               chunk.length
             } items). Attempt ${retries + 1}/${MAX_RETRIES}...`
           );
@@ -448,8 +450,10 @@ const AccModelDatabasePage = () => {
 
             if (resp.ok) {
               const responseData = await resp.json();
+
               console.log(
                 `✅ Batch ${currentChunkNumber} completed with status ${resp.status}. Response:`,
+
                 responseData
               );
               successInCurrentChunk = true;
@@ -481,8 +485,13 @@ const AccModelDatabasePage = () => {
                 retries++;
                 if (retries < MAX_RETRIES) {
                   const delay = INITIAL_RETRY_DELAY * Math.pow(2, retries - 1);
+
                   console.log(
                     `Retrying batch ${currentChunkNumber} in ${
+
+                  console.debug(
+                    `Reintentando lote ${currentChunkNumber} en ${
+
                       delay / 1000
                     }s...`
                   );
@@ -518,8 +527,10 @@ const AccModelDatabasePage = () => {
             retries++;
             if (retries < MAX_RETRIES) {
               const delay = INITIAL_RETRY_DELAY * Math.pow(2, retries - 1);
+
               console.log(
                 `Retrying batch ${currentChunkNumber} in ${
+
                   delay / 1000
                 }s (network error)...`
               );
@@ -577,7 +588,7 @@ const AccModelDatabasePage = () => {
         credentials: "include",
       });
 
-      console.log("Response:", response);
+      console.debug("Response:", response);
 
       if (response.ok) {
         const result = await response.json();
