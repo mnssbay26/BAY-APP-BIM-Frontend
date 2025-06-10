@@ -8,7 +8,7 @@ export const isolateObjectsInViewer = (viewer, dbIds) => {
     viewer.fitToView(ids );
   } else {
     console.error(
-      "Viewer no inicializado o no se encontraron elementos a aislar."
+      "Viewer not initialized or no elements found to isolate."
     );
   }
 };
@@ -18,7 +18,7 @@ export const showAllObjects = (viewer) => {
   if (viewer) {
     viewer.isolate(); 
   } else {
-    console.error("Viewer no inicializado.");
+    console.error("Viewer not initialized.");
   }
 };
 
@@ -29,7 +29,7 @@ export const hideObjectsInViewer = (viewer, dbIds) => {
   if (viewer && ids.length > 0) {
     viewer.hide(ids);
   } else {
-    console.error("Viewer no inicializado o no hay elementos para ocultar.");
+    console.error("Viewer not initialized or no elements to hide.");
   }
 };
 
@@ -39,7 +39,7 @@ export const highlightObjectsInViewer = (viewer, dbIds) => {
     viewer.clearSelection();
     viewer.select(ids);
   } else {
-    console.error("Viewer no inicializado o no hay elementos para resaltar.");
+    console.error("Viewer not initialized or no elements to highlight.");
   }
 };
 
@@ -60,7 +60,7 @@ export const applyFilterToViewer = async (
     const data = await response.json();
     if (!data.dbIds || data.dbIds.length === 0) {
       console.warn(
-        `No se encontraron elementos para el filtro: ${filterValue}`
+        `No elements found for filter: ${filterValue}`
       );
       return;
     }
@@ -78,10 +78,10 @@ export const applyFilterToViewer = async (
         highlightObjectsInViewer(viewer, data.dbIds);
         break;
       default:
-        console.error("Acción no reconocida:", filterType);
+        console.error("Unrecognized action:", filterType);
     }
   } catch (error) {
-    console.error("Error al aplicar filtro en el visor:", error);
+    console.error("Error applying filter to viewer:", error);
   }
 };
 
@@ -91,6 +91,6 @@ export const resetViewerView = (viewer) => {
     viewer.clearThemingColors();
     viewer.showAll();
   } else {
-    console.error("Viewer no inicializado.");
+    console.error("Viewer not initialized.");
   }
 };

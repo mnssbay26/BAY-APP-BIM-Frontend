@@ -139,7 +139,7 @@ export default function RFITable({ rfis = [], onViewDetails }) {
               />
             </div>
 
-            {/* Nuevo dropdown de estado */}
+            {/* New status dropdown */}
             <Select
               value={statusFilter}
               onValueChange={(v) => {

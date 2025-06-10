@@ -432,10 +432,12 @@ const AccModelDatabasePage = () => {
         let successInCurrentChunk = false;
 
         while (retries < MAX_RETRIES && !successInCurrentChunk) {
+
           console.debug(
             `🚀 Enviando lote ${currentChunkNumber}/${totalChunks} (${
+
               chunk.length
-            } items). Intento ${retries + 1}/${MAX_RETRIES}...`
+            } items). Attempt ${retries + 1}/${MAX_RETRIES}...`
           );
 
           try {
@@ -448,8 +450,10 @@ const AccModelDatabasePage = () => {
 
             if (resp.ok) {
               const responseData = await resp.json();
-              console.debug(
-                `✅ Lote ${currentChunkNumber} completado con status ${resp.status}. Respuesta:`,
+
+              console.log(
+                `✅ Batch ${currentChunkNumber} completed with status ${resp.status}. Response:`,
+
                 responseData
               );
               successInCurrentChunk = true;
@@ -468,11 +472,11 @@ const AccModelDatabasePage = () => {
                   resp.status === 504 &&
                   textError.toLowerCase().includes("vercel")
                 ) {
-                  errMsg = `Gateway Timeout (504). El servidor de Vercel tardó demasiado en responder.`;
+                  errMsg = `Gateway Timeout (504). The Vercel server took too long to respond.`;
                 }
               }
               console.error(
-                `Error en lote ${currentChunkNumber}, Intento ${
+                `Error in batch ${currentChunkNumber}, Attempt ${
                   retries + 1
                 }: ${errMsg}`
               );
@@ -481,14 +485,19 @@ const AccModelDatabasePage = () => {
                 retries++;
                 if (retries < MAX_RETRIES) {
                   const delay = INITIAL_RETRY_DELAY * Math.pow(2, retries - 1);
+
+                  console.log(
+                    `Retrying batch ${currentChunkNumber} in ${
+
                   console.debug(
                     `Reintentando lote ${currentChunkNumber} en ${
+
                       delay / 1000
                     }s...`
                   );
                   await new Promise((r) => setTimeout(r, delay));
                 } else {
-                  const finalErrorMsg = `Lote ${currentChunkNumber} falló después de ${MAX_RETRIES} intentos: ${errMsg}`;
+                  const finalErrorMsg = `Batch ${currentChunkNumber} failed after ${MAX_RETRIES} attempts: ${errMsg}`;
                   console.error(finalErrorMsg);
                   failedBatchesInfo.push({
                     batch: currentChunkNumber,
@@ -499,7 +508,7 @@ const AccModelDatabasePage = () => {
                   break;
                 }
               } else {
-                const clientErrorMsg = `Lote ${currentChunkNumber} falló con error cliente (status ${resp.status}): ${errMsg}`;
+                const clientErrorMsg = `Batch ${currentChunkNumber} failed with client error (status ${resp.status}): ${errMsg}`;
                 console.error(clientErrorMsg);
                 failedBatchesInfo.push({
                   batch: currentChunkNumber,
@@ -511,21 +520,23 @@ const AccModelDatabasePage = () => {
             }
           } catch (networkError) {
             console.error(
-              `Error de red en lote ${currentChunkNumber}, Intento ${
+              `Network error in batch ${currentChunkNumber}, Attempt ${
                 retries + 1
               }: ${networkError.message}`
             );
             retries++;
             if (retries < MAX_RETRIES) {
               const delay = INITIAL_RETRY_DELAY * Math.pow(2, retries - 1);
-              console.debug(
-                `Reintentando lote ${currentChunkNumber} en ${
+
+              console.log(
+                `Retrying batch ${currentChunkNumber} in ${
+
                   delay / 1000
-                }s (error de red)...`
+                }s (network error)...`
               );
               await new Promise((r) => setTimeout(r, delay));
             } else {
-              const finalNetErrorMsg = `Lote ${currentChunkNumber} falló por error de red después de ${MAX_RETRIES} intentos: ${networkError.message}`;
+              const finalNetErrorMsg = `Batch ${currentChunkNumber} failed due to network error after ${MAX_RETRIES} attempts: ${networkError.message}`;
               console.error(finalNetErrorMsg);
               failedBatchesInfo.push({
                 batch: currentChunkNumber,
@@ -544,23 +555,23 @@ const AccModelDatabasePage = () => {
 
       if (failedBatchesInfo.length > 0) {
         console.error(
-          "Algunos lotes no pudieron ser procesados:",
+          "Some batches could not be processed:",
           failedBatchesInfo
         );
         let failureSummary = failedBatchesInfo
-          .map((f) => `Lote ${f.batch} (${f.items} items) falló: ${f.error}`)
+          .map((f) => `Batch ${f.batch} (${f.items} items) failed: ${f.error}`)
           .join("\n");
         alert(
-          `Proceso completado con errores.\nLotes exitosos: ${successfulChunks}/${totalChunks} (${processedItems} items).\n\nLotes fallidos:\n${failureSummary}`
+          `Process completed with errors.\nSuccessful batches: ${successfulChunks}/${totalChunks} (${processedItems} items).\n\nFailed batches:\n${failureSummary}`
         );
       } else {
         alert(
-          `¡Todos los datos (${processedItems} items en ${successfulChunks} lotes) enviados exitosamente!`
+          `All data (${processedItems} items in ${successfulChunks} batches) sent successfully!`
         );
       }
     } catch (error) {
-      console.error("Error general en handleSubmit:", error);
-      alert(`Error crítico al procesar los datos: ${error.message}`);
+      console.error("General error in handleSubmit:", error);
+      alert(`Critical error processing data: ${error.message}`);
     }
   };
 
@@ -675,7 +686,7 @@ const AccModelDatabasePage = () => {
       ) {
         window.databaseviewer.applyColorByDiscipline(dbIds, selectedColor);
       } else {
-        console.warn("applyColorByDiscipline no disponible en el viewer.");
+        console.warn("applyColorByDiscipline not available in the viewer.");
       }
     } catch (error) {
       console.error("Error applying color:", error);
@@ -903,8 +914,8 @@ const AccModelDatabasePage = () => {
         }
       }
     } catch (error) {
-      console.error("Error en el chatbot:", error);
-      setChatbotResponse("Hubo un error al procesar tu solicitud.");
+      console.error("Chatbot error:", error);
+      setChatbotResponse("There was an error processing your request.");
     } finally {
       setIsLoading(false);
     }
