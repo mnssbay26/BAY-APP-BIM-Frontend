@@ -3,9 +3,9 @@ import { ResponsiveBar } from '@nivo/bar';
 
 const BarChart_NivoCompanyUsers = ({ companyCounts, onCompanyClick }) => {
     const chartContainerRef = useRef(null);
-    const [containerWidth, setContainerWidth] = useState(400); // Valor inicial predeterminado
+    const [containerWidth, setContainerWidth] = useState(400); // Default initial value
 
-    // Actualizar el ancho del contenedor
+    // Update container width
     useEffect(() => {
         const resizeObserver = new ResizeObserver((entries) => {
             if (entries[0]) {
@@ -29,11 +29,11 @@ const BarChart_NivoCompanyUsers = ({ companyCounts, onCompanyClick }) => {
         users: companyCounts[company],
     }));
 
-    // Determinar el máximo de usuarios
+    // Determine the maximum number of users
     const maxUsers = Math.max(...Object.values(companyCounts), 0);
 
-    // Crear los ticks dinámicamente
-    const tickStep = maxUsers <= 20 ? 1 : 10; // Step dinámico basado en la cantidad de usuarios
+    // Create ticks dynamically
+    const tickStep = maxUsers <= 20 ? 1 : 10; // Dynamic step based on user count
     const tickValues = Array.from(
         { length: Math.ceil(maxUsers / tickStep) + 1 },
         (_, i) => i * tickStep
@@ -66,7 +66,7 @@ const BarChart_NivoCompanyUsers = ({ companyCounts, onCompanyClick }) => {
                 }}
                 enableGridX={true}
                 enableGridY={false}
-                width={containerWidth} // Ajustar el ancho dinámicamente
+                width={containerWidth} // Adjust width dynamically
                 height={350}
                 tooltip={({ id, value }) => (
                     <div

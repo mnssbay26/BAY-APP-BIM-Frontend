@@ -24,7 +24,7 @@ function BayerBim360Sidebar() {
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  // Categorías
+  // Categories
   const overviewItems = [
     { to: "/bim360/projects", icon: FaHome, label: "Projects Page" },
     {
@@ -80,12 +80,12 @@ function BayerBim360Sidebar() {
     setIsMobileMenuOpen(false)
   }
 
-  // Ancho del sidebar en desktop
+  // Sidebar width on desktop
   const sidebarWidth = isCollapsed ? "w-16" : "w-64"
 
   return (
     <>
-      {/* Botón hamburguesa (sólo en mobile) */}
+      {/* Hamburger button (mobile only) */}
       <button
         onClick={handleToggleMobile}
         className="lg:hidden absolute top-4 left-4 z-30 p-2 rounded-lg bg-black text-white"
@@ -93,7 +93,7 @@ function BayerBim360Sidebar() {
         <FaBars className="h-5 w-5" />
       </button>
 
-      {/* Overlay en mobile */}
+      {/* Mobile overlay */}
       {isMobileMenuOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-40 z-20 lg:hidden"
@@ -116,14 +116,14 @@ function BayerBim360Sidebar() {
           ${isMobileMenuOpen ? "absolute translate-x-0" : "absolute -translate-x-full lg:translate-x-0 lg:static"}
         `}
       >
-        {/* ENCABEZADO */}
+        {/* HEADER */}
         <div className="flex items-center justify-between p-4 border-b border-gray-800">
-          {/* Título (solo visible si expandido) */}
+          {/* Title (visible only when expanded) */}
           {!isCollapsed && (
             <h2 className="text-sm font-bold whitespace-nowrap">BAYER BIM CONNECT</h2>
           )}
 
-          {/* Botón chevron colapsar/expandir */}
+          {/* Chevron button collapse/expand */}
           <button
             onClick={handleToggleDesktop}
             className="p-2 rounded-full hover:bg-gray-800 transition-colors duration-200"
@@ -136,7 +136,7 @@ function BayerBim360Sidebar() {
           </button>
         </div>
 
-        {/* CONTENIDO SCROLL */}
+        {/* SCROLL CONTENT */}
         <div className="flex-1 overflow-y-auto py-4">
           <SidebarCategory
             isCollapsed={isCollapsed}
@@ -175,7 +175,7 @@ function BayerBim360Sidebar() {
   )
 }
 
-/** Sección de la sidebar: Título + Lista de items */
+/** Sidebar section: Title + Item list */
 function SidebarCategory({ isCollapsed, title, items, onLinkClick }) {
   return (
     <div className="mb-6">
@@ -199,7 +199,7 @@ function SidebarCategory({ isCollapsed, title, items, onLinkClick }) {
   )
 }
 
-/** Item del menú */
+/** Menu item */
 function NavItem({ to, icon: Icon, label, onClick }) {
   return (
     <Link
