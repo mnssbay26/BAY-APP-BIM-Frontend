@@ -21,7 +21,7 @@ import {
   Link2Off,
 } from "lucide-react";
 
-// Importa los componentes UI de shadcn
+// Import shadcn UI components
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -47,7 +47,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 
-// Importa el EnhancedColorPicker
+// Import the EnhancedColorPicker
 import EnhancedColorPicker from "./color.selector";
 
 export default function ControlPanel({
@@ -61,13 +61,13 @@ export default function ControlPanel({
   resetViewerView,
   showAllObjects,
 
-  // Props para la tabla principal
+  // Props for the main table
   handleAddRow,
   handleRemoveRow,
   handleSubmit,
   handlePullData,
 
-  // Props para el control de color por disciplina
+  // Props for discipline color control
   disciplineOptions,
   selectedDisciplineForColor,
   setSelectedDisciplineForColor,
@@ -75,7 +75,7 @@ export default function ControlPanel({
   setSelectedColor,
   handleApplyColorToDiscipline,
 
-  // Props para tablas personalizadas (si se usan)
+  // Props for custom tables (if used)
   customTableName = "",
   setCustomTableName = () => {},
   handleAddCustomRow = () => {},
@@ -92,7 +92,7 @@ export default function ControlPanel({
       animate={{ opacity: 1, y: 0 }}
       className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 overflow-hidden w-full"
     >
-      {/* Encabezado del Panel */}
+      {/* Panel Header */}
       <div className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
           <h3 className="font-medium text-m">Control Center</h3>
@@ -121,7 +121,7 @@ export default function ControlPanel({
         </div>
       </div>
 
-      {/* Contenido del Panel */}
+      {/* Panel Content */}
       <AnimatePresence>
         {isPanelExpanded && (
           <motion.div
@@ -162,11 +162,11 @@ export default function ControlPanel({
                 </TabsList>
               </div>
 
-              {/* Contenido - VIEWER */}
+              {/* Content - VIEWER */}
               <TabsContent value="viewer" className="p-4">
                 <Card className="border-none shadow-none">
                   <CardContent className="p-0 space-y-4">
-                    {/* Primera fila de botones */}
+                    {/* First row of buttons */}
                     <div className="grid grid-cols-4 gap-3">
                       <Button
                         variant="default"
@@ -208,7 +208,7 @@ export default function ControlPanel({
                       </Button>
                     </div>
 
-                    {/* Segunda fila en Viewer */}
+                    {/* Second row in Viewer */}
                     <div className="grid grid-cols-4 gap-3 mt-3">
                       <div className="col-span-1">
                         <Button
@@ -251,7 +251,7 @@ export default function ControlPanel({
                             ))}
                           </SelectContent>
                         </Select>
-                        {/* Se reemplaza el input de color por el EnhancedColorPicker */}
+                        {/* Replace color input with the EnhancedColorPicker */}
                         <EnhancedColorPicker
                           selectedColor={selectedColor}
                           setSelectedColor={setSelectedColor}
@@ -271,11 +271,11 @@ export default function ControlPanel({
                 </Card>
               </TabsContent>
 
-              {/* Contenido - TABLE */}
+              {/* Content - TABLE */}
               <TabsContent value="table" className="p-4">
                 <Card className="border-none shadow-none">
                   <CardContent className="p-0 space-y-4">
-                    {/* Primera fila: Add Row, Delete Row */}
+                    {/* First row: Add Row, Delete Row */}
                     <div className="grid grid-cols-2 gap-3">
                       <Button
                         variant="default"
@@ -294,7 +294,7 @@ export default function ControlPanel({
                         <span>Delete Row</span>
                       </Button>
                     </div>
-                    {/* Segunda fila: Send Data y Pull Data */}
+                    {/* Second row: Send Data and Pull Data */}
                     <div className="grid grid-cols-2 gap-3 mt-3">
                       <Button
                         variant="default"
@@ -344,7 +344,7 @@ export default function ControlPanel({
                 </Card>
               </TabsContent>
 
-              {/* Contenido - CUSTOM TABLES */}
+              {/* Content - CUSTOM TABLES */}
               <TabsContent value="custom" className="p-4">
                 <Card className="border-none shadow-none">
                   <CardContent className="p-0 space-y-4">

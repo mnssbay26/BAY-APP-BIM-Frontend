@@ -10,18 +10,18 @@ export const ProjectsDropdownMenu = ({
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Alternar abrir/cerrar
+  // Toggle open/close
   const handleToggle = () => {
     setOpen(!open);
   };
 
-  // Manejar selección de opción
+  // Handle option selection
   const handleOptionClick = (option) => {
     onSelect(option);
     setOpen(false);
   };
 
-  // Cerrar el dropdown al hacer clic fuera
+  // Close the dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -36,7 +36,7 @@ export const ProjectsDropdownMenu = ({
 
   return (
     <div className={`relative inline-block ${className} w-[600px]`} ref={dropdownRef}>
-      {/* Botón principal con flecha */}
+      {/* Main button with arrow */}
       <button
         className="
           bg-gray-100
@@ -59,7 +59,7 @@ export const ProjectsDropdownMenu = ({
         <FaChevronDown className="text-sm ml-auto" />
       </button>
 
-      {/* Listado de opciones */}
+      {/* Options list */}
       {open && (
         <div className="absolute mt-2 bg-[#ffffff] text-white border border-gray-600 rounded-md shadow-lg min-w-[200px] z-50">
           <ul className="flex flex-col text-black">
@@ -81,7 +81,7 @@ export const ProjectsDropdownMenu = ({
                     break-words
                   "
                 >
-                  {/* Ícono de carpeta con tamaño fijo */}
+                  {/* Folder icon with fixed size */}
                   <FaFolder className="mr-2 w-4 h-4 flex-shrink-0" />
                   {option.label}
                 </button>

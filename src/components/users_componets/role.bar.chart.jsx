@@ -5,7 +5,7 @@ const BarChart_NivoRoleUsers = ({ roleCounts, onRoleClick }) => {
     const chartContainerRef = useRef(null);
     const [containerWidth, setContainerWidth] = useState(400);
 
-    // Actualizar el ancho del contenedor
+    // Update container width
     useEffect(() => {
         const resizeObserver = new ResizeObserver((entries) => {
             if (entries[0]) {
@@ -65,7 +65,7 @@ const BarChart_NivoRoleUsers = ({ roleCounts, onRoleClick }) => {
                 }}
                 enableGridX={true}
                 enableGridY={false}
-                width={containerWidth} // Ajustar el ancho dinámicamente
+                width={containerWidth} // Adjust width dynamically
                 height={350}
                 tooltip={({ id, value }) => (
                     <div
