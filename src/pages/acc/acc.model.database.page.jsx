@@ -456,7 +456,7 @@ const AccModelDatabasePage = () => {
         credentials: "include",
       });
 
-      console.log("Response:", response);
+      console.debug("Response:", response);
 
       if (response.ok) {
         const result = await response.json();

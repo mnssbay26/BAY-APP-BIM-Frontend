@@ -116,7 +116,7 @@ const Bim360ProjectPage = () => {
         });
     }, [projectId, accountId]);
 
-    console.log("FederatedModel:", federatedModel);
+    console.debug("FederatedModel:", federatedModel);
 
     useEffect(() => {
     if (federatedModel && federatedModel.length > 0) {
