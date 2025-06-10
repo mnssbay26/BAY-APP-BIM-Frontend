@@ -59,12 +59,12 @@ function BayerBim360Sidebar() {
   ]
   const databaseItems = [
     {
-      to: `/bim360/projects/${accountId}/${projectId}/4d`,
+      to: `/bim360/projects/${accountId}/${projectId}/model-database`,
       icon: FaCubes,
       label: "Model Database",
     },
     {
-      to: `/bim360/projects/${accountId}/${projectId}/7d`,
+      to: `/bim360/projects/${accountId}/${projectId}/digitaltwin`,
       icon: FaDatabase,
       label: "Digital Twin",
     },

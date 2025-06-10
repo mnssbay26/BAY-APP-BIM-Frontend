@@ -19,7 +19,7 @@ import {
   propertyMappings,
   numericFields,
   disciplineOptions,
-} from "../../../lib/database.constants";
+} from "../../lib/database.constants";
 
 import { defaultRowData as defaultRow } from "../../lib/default.row";
 
@@ -34,7 +34,7 @@ import {
 import {
   fetchAccFederatedModel,
   fetchAccProjectData,
-} from "../../pages/services/acc.services.js";
+} from "../services/acc.services.js";
 
 import {
   mapCategoryToElementType,
@@ -42,9 +42,8 @@ import {
 } from "../../lib/general.functions";
 
 import { useTableControls } from "../services/database.table";
-
-import { DatabaseTable } from "../../components/model_database_components/database.table";
-import { ControlPanel } from "../../components/model_database_components/control.panel";
+import DatabaseTable from "../../components/model_database_components/database.table";
+import ControlPanel from "../../components/model_database_components/control.panel";
 
 const backendUrl = import.meta.env.VITE_API_BACKEND_BASE_URL;
 
@@ -59,28 +58,27 @@ const sampleQuestions = [
 ];
 
 const AccModelDatabasePage = () => {
-  const defaultRowData = useMemo(() => defaultRow, []);
-  const propertyMapping = useMemo(() => propertyMappings["General"], []);
+  //General
+  const { projectId, accountId } = useParams();
+  const [cookies] = useCookies(["access_token"]);
   const [federatedModel, setFederatedModel] = useState(null);
   const [projectData, setProjectData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const { projectId, accountId } = useParams();
-  const [cookies] = useCookies(["access_token"]);
-
+  //Table and Viewer
+  const defaultRowData = useMemo(() => defaultRow, []);
+  const propertyMapping = useMemo(() => propertyMappings["General"], []);
   const [data, setData] = useState([defaultRow]);
   const [collapsedDisciplines, setCollapsedDisciplines] = useState({});
   const [selectedRows, setSelectedRows] = useState([]);
   const [lastClickedRowNumber, setLastClickedRowNumber] = useState(null);
-
   const [showViewer, setShowViewer] = useState(true);
   const [showAIpanel, setAIpanel] = useState(false);
   const [selectionCount, setSelectionCount] = useState(0);
   const [categoryData, setCategoryData] = useState([]);
   const [isLoadingTree, setIsLoadingTree] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
   const [syncViewerSelection, setSyncViewerSelection] = useState(false);
   const syncViewerSelectionRef = useRef(false);
   const [selectedDisciplineForColor, setSelectedDisciplineForColor] =
@@ -88,19 +86,50 @@ const AccModelDatabasePage = () => {
   const [selectedColor, setSelectedColor] = useState("#ff0000");
   const [isPullMenuOpen, setIsPullMenuOpen] = useState(false);
 
+  //AI Panel
   const [userMessage, setUserMessage] = useState("");
   const [chatbotResponse, setChatbotResponse] = useState("");
   const [conversationHistory, setConversationHistory] = useState(
     JSON.parse(localStorage.getItem("conversationHistory")) || []
   );
 
+  const viewerWidthClass = useMemo(() => {
+    if (!showViewer) return "w-0";
+    return "w-2/5";
+  }, [showViewer]);
+
+  const tableWidthClass = useMemo(() => {
+    //Scenario 1 : No active Viewer, no active AI panel => table=w-full
+    if (!showViewer && !showAIpanel) return "w-full";
+
+    //Scenario 2 : Active Viewer, no active AI panel => table=w-3/5
+    if (showViewer && !showAIpanel) return "w-3/5";
+
+    //Scenario 3 : Active Viewer and AI panel => table=w-2/5
+    if (showViewer && showAIpanel) return "w-2/5";
+
+    //Scenario 4 : No active Viewer, active AI panel => table=w-4/5
+    if (!showViewer && showAIpanel) return "w-4/5";
+
+    return "w-full"; // fallback
+  }, [showViewer, showAIpanel]);
+
+  const aiWidthClass = useMemo(() => {
+    return showAIpanel ? "w-1/5" : "w-0";
+  }, [showAIpanel]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "conversationHistory",
+      JSON.stringify(conversationHistory)
+    );
+  }, [conversationHistory]);
+
   const { handleAddRow, handleRemoveRow } = useTableControls(
     setData,
     defaultRow,
     reorderRowsByDiscipline
   );
-
-  const tableContainerRef = useRef(null);
 
   useEffect(() => {
     setLoading(true);
@@ -216,7 +245,7 @@ const AccModelDatabasePage = () => {
     return () => {
       window.removeEventListener("dbIdDataExtracted", handleDataExtracted);
     };
-  }, [defaultRow, propertyMapping, fieldsToCheck]);
+  }, [propertyMapping, fieldsToCheck]);
 
   const groupedData = useMemo(() => {
     return data.reduce((acc, row) => {
@@ -368,207 +397,57 @@ const AccModelDatabasePage = () => {
     }
   }, [syncViewerSelection, handleViewerSelectionChanged]);
 
-  useEffect(() => {
-    if (
-      !window.databaseviewer ||
-      typeof window.databaseviewer.set4DData !== "function"
-    ) {
-      return;
-    }
-
-    const validData = data.filter(
-      (item) => item.dbId && !isNaN(parseInt(item.dbId, 10))
-    );
-    const fourDData = validData.map((item) => ({
-      dbId: parseInt(item.dbId, 10),
-      startDate: item.PlanedConstructionStartDate,
-      endDate: item.PlanedConstructionEndDate,
-    }));
-
-    window.databaseviewer.set4DData(fourDData);
-  }, [data]);
-
   const handleSubmit = async () => {
     try {
+      // Clean numeric fields
       const cleanedData = data.map((row) => {
         const cleanedRow = { ...row };
-
-        if (
-          typeof numericFields !== "undefined" &&
-          Array.isArray(numericFields)
-        ) {
-          numericFields.forEach((field) => {
-            const v = cleanedRow[field];
-            if (typeof v === "string") {
-              if (v.trim() === "" || v.toLowerCase() === "not specified") {
-                cleanedRow[field] = null;
-              } else {
-                const n = parseFloat(v);
-                cleanedRow[field] = isNaN(n) ? null : n;
-              }
-            } else if (v === undefined) {
-              cleanedRow[field] = null;
-            }
-          });
-        }
+        numericFields.forEach((field) => {
+          const v = cleanedRow[field];
+          if (typeof v === "string" && !v.trim()) cleanedRow[field] = null;
+          else if (typeof v === "string") {
+            const n = parseFloat(v);
+            cleanedRow[field] = isNaN(n) ? null : n;
+          }
+        });
         return cleanedRow;
       });
 
-      const CHUNK_SIZE = 500;
-      const MAX_RETRIES = 3;
-      const INITIAL_RETRY_DELAY = 1000;
-      const PROGRESS_UPDATE_INTERVAL = 200;
-
+      // Send all model data in one request
       const url = `${backendUrl}/modeldata/${accountId}/${projectId}/data`;
-      const totalChunks = Math.ceil(cleanedData.length / CHUNK_SIZE);
-      let successfulChunks = 0;
-      let processedItems = 0;
-      const failedBatchesInfo = [];
+      const resp = await fetch(url, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountId,
+          projectId,
+          service: "model-data",
+          modelUrn: `${federatedModel}`,
+          items: cleanedData,
+        }),
+      });
 
-      for (let i = 0; i < cleanedData.length; i += CHUNK_SIZE) {
-        const chunk = cleanedData.slice(i, i + CHUNK_SIZE);
-        const currentChunkNumber = Math.floor(i / CHUNK_SIZE) + 1;
-        let retries = 0;
-        let successInCurrentChunk = false;
-
-        while (retries < MAX_RETRIES && !successInCurrentChunk) {
-          console.log(
-            `🚀 Enviando lote ${currentChunkNumber}/${totalChunks} (${
-              chunk.length
-            } items). Intento ${retries + 1}/${MAX_RETRIES}...`
-          );
-
-          try {
-            const resp = await fetch(url, {
-              method: "POST",
-              credentials: "include",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(chunk),
-            });
-
-            if (resp.ok) {
-              const responseData = await resp.json();
-              console.log(
-                `✅ Lote ${currentChunkNumber} completado con status ${resp.status}. Respuesta:`,
-                responseData
-              );
-              successInCurrentChunk = true;
-              successfulChunks++;
-              processedItems += chunk.length;
-            } else {
-              let errMsg = `HTTP ${resp.status}: ${resp.statusText}`;
-              let errorDetails = null;
-              try {
-                errorDetails = await resp.json();
-                errMsg = errorDetails.message || JSON.stringify(errorDetails);
-              } catch (e) {
-                const textError = await resp.text();
-                errMsg = textError.substring(0, 200);
-                if (
-                  resp.status === 504 &&
-                  textError.toLowerCase().includes("vercel")
-                ) {
-                  errMsg = `Gateway Timeout (504). El servidor de Vercel tardó demasiado en responder.`;
-                }
-              }
-              console.error(
-                `Error en lote ${currentChunkNumber}, Intento ${
-                  retries + 1
-                }: ${errMsg}`
-              );
-
-              if (resp.status >= 500 && resp.status <= 599) {
-                retries++;
-                if (retries < MAX_RETRIES) {
-                  const delay = INITIAL_RETRY_DELAY * Math.pow(2, retries - 1);
-                  console.log(
-                    `Reintentando lote ${currentChunkNumber} en ${
-                      delay / 1000
-                    }s...`
-                  );
-                  await new Promise((r) => setTimeout(r, delay));
-                } else {
-                  const finalErrorMsg = `Lote ${currentChunkNumber} falló después de ${MAX_RETRIES} intentos: ${errMsg}`;
-                  console.error(finalErrorMsg);
-                  failedBatchesInfo.push({
-                    batch: currentChunkNumber,
-                    error: errMsg,
-                    items: chunk.length,
-                  });
-
-                  break;
-                }
-              } else {
-                const clientErrorMsg = `Lote ${currentChunkNumber} falló con error cliente (status ${resp.status}): ${errMsg}`;
-                console.error(clientErrorMsg);
-                failedBatchesInfo.push({
-                  batch: currentChunkNumber,
-                  error: clientErrorMsg,
-                  items: chunk.length,
-                });
-                break;
-              }
-            }
-          } catch (networkError) {
-            console.error(
-              `Error de red en lote ${currentChunkNumber}, Intento ${
-                retries + 1
-              }: ${networkError.message}`
-            );
-            retries++;
-            if (retries < MAX_RETRIES) {
-              const delay = INITIAL_RETRY_DELAY * Math.pow(2, retries - 1);
-              console.log(
-                `Reintentando lote ${currentChunkNumber} en ${
-                  delay / 1000
-                }s (error de red)...`
-              );
-              await new Promise((r) => setTimeout(r, delay));
-            } else {
-              const finalNetErrorMsg = `Lote ${currentChunkNumber} falló por error de red después de ${MAX_RETRIES} intentos: ${networkError.message}`;
-              console.error(finalNetErrorMsg);
-              failedBatchesInfo.push({
-                batch: currentChunkNumber,
-                error: finalNetErrorMsg,
-                items: chunk.length,
-              });
-              break;
-            }
-          }
-        }
-
-        if (currentChunkNumber < totalChunks) {
-          await new Promise((r) => setTimeout(r, PROGRESS_UPDATE_INTERVAL));
-        }
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        throw new Error(`Error ${resp.status}: ${errorText}`);
       }
 
-      if (failedBatchesInfo.length > 0) {
-        console.error(
-          "Algunos lotes no pudieron ser procesados:",
-          failedBatchesInfo
-        );
-        let failureSummary = failedBatchesInfo
-          .map((f) => `Lote ${f.batch} (${f.items} items) falló: ${f.error}`)
-          .join("\n");
-        alert(
-          `Proceso completado con errores.\nLotes exitosos: ${successfulChunks}/${totalChunks} (${processedItems} items).\n\nLotes fallidos:\n${failureSummary}`
-        );
-      } else {
-        alert(
-          `¡Todos los datos (${processedItems} items en ${successfulChunks} lotes) enviados exitosamente!`
-        );
-      }
+      const result = await resp.json();
+      alert("¡Datos enviados correctamente!");
+      // Refresh table
+      await handlePullData();
     } catch (error) {
-      console.error("Error general en handleSubmit:", error);
-      alert(`Error crítico al procesar los datos: ${error.message}`);
+      console.error("Error en handleSubmit:", error);
+      alert(`Error al enviar datos: ${error.message}`);
     }
   };
 
   const handlePullData = async (discipline = null) => {
     try {
-      let url = `${backendUrl}/modeldata/${accountId}/${projectId}/data`;
+      let url = `${backendUrl}/modeldata/${accountId}/${projectId}/data?modelUrn=${encodeURIComponent(federatedModel)}`;
       if (discipline) {
-        url += `?discipline=${encodeURIComponent(discipline)}`;
+        url += `&discipline=${encodeURIComponent(discipline)}`;
       }
 
       const response = await fetch(url, {
@@ -612,18 +491,6 @@ const AccModelDatabasePage = () => {
           tempRows = reorderRowsByDiscipline(tempRows);
           setData(tempRows);
           alert("Data successfully loaded");
-
-          if (
-            window.databaseviewer &&
-            typeof window.databaseviewer.set4DData === "function"
-          ) {
-            const fourDData = tempRows.map((item) => ({
-              dbId: parseInt(item.dbId, 10),
-              startDate: item.PlanedConstructionStartDate,
-              endDate: item.PlanedConstructionEndDate,
-            }));
-            window.databaseviewer.set4DData(fourDData);
-          }
         } else {
           alert("No data was found for this project.");
         }
@@ -687,7 +554,7 @@ const AccModelDatabasePage = () => {
   const fetchAllData = async (projectId) => {
     let allData = [];
     let page = 1;
-    let limit = 50;
+    let limit = 250;
     let hasMoreData = true;
 
     try {
@@ -739,40 +606,7 @@ const AccModelDatabasePage = () => {
     };
   }, []);
 
-  if (loading) {
-    return <BayerLoadingOverlay message="Loading project details..." />;
-  }
-
-  if (error) {
-    return <div className="text-red-600">{error}</div>;
-  }
-
-    const viewerWidthClass = useMemo(() => {
-    if (!showViewer) return "w-0";
-    return "w-2/5";
-  }, [showViewer, showAIpanel]);
-
-  const tableWidthClass = useMemo(() => {
-    // Caso 1: No viewer, no IA => tabla = w-full
-    if (!showViewer && !showAIpanel) return "w-full";
-
-    // Caso 2: Viewer activo, IA NO activo => tabla=3/5
-    if (showViewer && !showAIpanel) return "w-3/5";
-
-    // Caso 3: Viewer + IA => tabla=2/5
-    if (showViewer && showAIpanel) return "w-2/5";
-
-    // Caso 4: IA activo, viewer NO => tabla=4/5
-    if (!showViewer && showAIpanel) return "w-4/5";
-
-    return "w-full"; // fallback
-  }, [showViewer, showAIpanel]);
-
-   const aiWidthClass = useMemo(() => {
-    return showAIpanel ? "w-1/5" : "w-0";
-  }, [showAIpanel]);
-
-    const handleSendMessage = async () => {
+  const handleSendMessage = async () => {
     setIsLoading(true);
     try {
       const lowerMsg = userMessage.toLowerCase();
@@ -910,12 +744,13 @@ const AccModelDatabasePage = () => {
     }
   };
 
-  useEffect(() => {
-    localStorage.setItem(
-      "conversationHistory",
-      JSON.stringify(conversationHistory)
-    );
-  }, [conversationHistory]);
+  if (loading) {
+    return <BayerLoadingOverlay message="Loading project details..." />;
+  }
+
+  if (error) {
+    return <div className="text-red-600">{error}</div>;
+  }
 
   return (
     <BayerAccMainLayout accountId={accountId} projectId={projectId}>
@@ -1009,7 +844,7 @@ const AccModelDatabasePage = () => {
                   ${tableWidthClass}
                 `}
             >
-              <Database4DTable
+              <DatabaseTable
                 viewer={window.databaseviewer}
                 data={data}
                 groupedData={groupedData}
@@ -1032,67 +867,65 @@ const AccModelDatabasePage = () => {
             </div>
 
             {/* AI Panel */}
-              <div
-                className={`
+            <div
+              className={`
                   transition-all duration-300 overflow-hidden bg-white shadow-lg rounded-lg p-4 mr-2
                   ${aiWidthClass}
                 `}
-              >
-                {showAIpanel && (
-                  <>
-                    <div className="flex justify-between items-center mb-2">
-                      <h2 className="text-xl font-bold text-right w-full">
-                        AI Panel
-                      </h2>
+            >
+              {showAIpanel && (
+                <>
+                  <div className="flex justify-between items-center mb-2">
+                    <h2 className="text-xl font-bold text-right w-full">
+                      AI Panel
+                    </h2>
+                  </div>
+                  <hr className="my-4 border-t border-gray-300" />
+                  <div className="bg-gray-100 p-4 rounded-lg">
+                    <textarea
+                      className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 text-xs"
+                      rows="3"
+                      placeholder="Write your question..."
+                      value={userMessage}
+                      onChange={(e) => setUserMessage(e.target.value)}
+                    />
+                    <button
+                      onClick={handleSendMessage}
+                      disabled={userMessage.trim() === ""}
+                      className={`w-full py-2 px-4 rounded text-xs ${
+                        userMessage.trim() === ""
+                          ? "bg-[#2ea3e3] text-white cursor-not-allowed"
+                          : "bg-[#F19A3E] text-white hover:bg-[#FE7F2D]"
+                      }`}
+                    >
+                      Send
+                    </button>
+                  </div>
+                  <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded text-xs">
+                    <p className="text-gray-700 font-medium text-xs">Answer:</p>
+                    <p className="mt-2 text-gray-800 text-xs">
+                      {chatbotResponse}
+                    </p>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-gray-700 font-medium text-[0.7rem]">
+                      Sample Questions:
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {sampleQuestions.map((q, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setUserMessage(q)}
+                          className="bg-gray-200 hover:bg-gray-300 text-[0.7rem] py-1 px-2 rounded"
+                        >
+                          {q}
+                        </button>
+                      ))}
                     </div>
-                    <hr className="my-4 border-t border-gray-300" />
-                    <div className="bg-gray-100 p-4 rounded-lg">
-                      <textarea
-                        className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 text-xs"
-                        rows="3"
-                        placeholder="Write your question..."
-                        value={userMessage}
-                        onChange={(e) => setUserMessage(e.target.value)}
-                      />
-                      <button
-                        onClick={handleSendMessage}
-                        disabled={userMessage.trim() === ""}
-                        className={`w-full py-2 px-4 rounded text-xs ${
-                          userMessage.trim() === ""
-                            ? "bg-[#2ea3e3] text-white cursor-not-allowed"
-                            : "bg-[#F19A3E] text-white hover:bg-[#FE7F2D]"
-                        }`}
-                      >
-                        Send
-                      </button>
-                    </div>
-                    <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded text-xs">
-                      <p className="text-gray-700 font-medium text-xs">
-                        Answer:
-                      </p>
-                      <p className="mt-2 text-gray-800 text-xs">
-                        {chatbotResponse}
-                      </p>
-                    </div>
-                    <div className="mt-2">
-                      <p className="text-gray-700 font-medium text-[0.7rem]">
-                        Sample Questions:
-                      </p>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        {sampleQuestions.map((q, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => setUserMessage(q)}
-                            className="bg-gray-200 hover:bg-gray-300 text-[0.7rem] py-1 px-2 rounded"
-                          >
-                            {q}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </>
       )}
