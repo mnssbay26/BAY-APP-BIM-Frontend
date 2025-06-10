@@ -432,7 +432,7 @@ const AccModelDatabasePage = () => {
         let successInCurrentChunk = false;
 
         while (retries < MAX_RETRIES && !successInCurrentChunk) {
-          console.log(
+          console.debug(
             `🚀 Enviando lote ${currentChunkNumber}/${totalChunks} (${
               chunk.length
             } items). Intento ${retries + 1}/${MAX_RETRIES}...`
@@ -448,7 +448,7 @@ const AccModelDatabasePage = () => {
 
             if (resp.ok) {
               const responseData = await resp.json();
-              console.log(
+              console.debug(
                 `✅ Lote ${currentChunkNumber} completado con status ${resp.status}. Respuesta:`,
                 responseData
               );
@@ -481,7 +481,7 @@ const AccModelDatabasePage = () => {
                 retries++;
                 if (retries < MAX_RETRIES) {
                   const delay = INITIAL_RETRY_DELAY * Math.pow(2, retries - 1);
-                  console.log(
+                  console.debug(
                     `Reintentando lote ${currentChunkNumber} en ${
                       delay / 1000
                     }s...`
@@ -518,7 +518,7 @@ const AccModelDatabasePage = () => {
             retries++;
             if (retries < MAX_RETRIES) {
               const delay = INITIAL_RETRY_DELAY * Math.pow(2, retries - 1);
-              console.log(
+              console.debug(
                 `Reintentando lote ${currentChunkNumber} en ${
                   delay / 1000
                 }s (error de red)...`
@@ -577,7 +577,7 @@ const AccModelDatabasePage = () => {
         credentials: "include",
       });
 
-      console.log("Response:", response);
+      console.debug("Response:", response);
 
       if (response.ok) {
         const result = await response.json();
