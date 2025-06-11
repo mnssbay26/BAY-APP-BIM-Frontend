@@ -237,9 +237,9 @@ const AccProjectUsersPage = () => {
     return <div className="text-red-600">{error}</div>;
   }
 
-  console.log("users:", users);
-  console.log("Role Counts:", roleCounts);
-  console.log("Company Data:", companyCounts);
+  console.debug("users:", users);
+  console.debug("Role Counts:", roleCounts);
+  console.debug("Company Data:", companyCounts);
 
   return (
     <BayerAccMainLayout

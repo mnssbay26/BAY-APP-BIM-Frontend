@@ -456,7 +456,8 @@ const AccModelDatabasePage = () => {
         credentials: "include",
       });
 
-      console.log("Response:", response);
+      console.debug("Response:", response);
+      console.debug("Response:", response);
 
       if (response.ok) {
         const result = await response.json();
@@ -542,7 +543,8 @@ const AccModelDatabasePage = () => {
       ) {
         window.databaseviewer.applyColorByDiscipline(dbIds, selectedColor);
       } else {
-        console.warn("applyColorByDiscipline no disponible en el viewer.");
+        console.warn("applyColorByDiscipline not available in the viewer.");
+        console.warn("applyColorByDiscipline not available in the viewer.");
       }
     } catch (error) {
       console.error("Error applying color:", error);
@@ -737,8 +739,10 @@ const AccModelDatabasePage = () => {
         }
       }
     } catch (error) {
-      console.error("Error en el chatbot:", error);
-      setChatbotResponse("Hubo un error al procesar tu solicitud.");
+      console.error("Chatbot error:", error);
+      setChatbotResponse("There was an error processing your request.");
+      console.error("Chatbot error:", error);
+      setChatbotResponse("There was an error processing your request.");
     } finally {
       setIsLoading(false);
     }

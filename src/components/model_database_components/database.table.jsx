@@ -216,7 +216,7 @@ const DisciplineHeaderRow = React.memo(function DisciplineHeaderRow({
 });
 
 /** 2) ElementRow */
-/* Se reemplaza onClick por onMouseDown en controles internos para permitir el foco y edición */
+/* Replace onClick with onMouseDown in internal controls to allow focus and editing */
 const ElementRow = React.memo(function ElementRow({
   row,
   visibleColumns,

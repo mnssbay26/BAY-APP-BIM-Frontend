@@ -69,7 +69,7 @@ const Bim360ProjectsHeader = ({ projectId, accountId }) => {
 
             const data = await response.json();
 
-            console.log("user profile data", data);
+            console.debug("user profile data", data);
             setUserProfile(data.data.user.emailId);
           } catch (error) {
             setError(
