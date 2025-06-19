@@ -18,6 +18,26 @@ import DonutChartGeneric from "../../components/issues_components/issues.generc.
 
 import { reportsSliderSettings } from "../utils/project.slider.settings.utils.js";
 
+const backendUrl =
+  import.meta.env.VITE_API_BACKEND_BASE_URL || "http://localhost:3000";
+
+const sampleQuestions = [
+  "How many open issues exist in the project?",
+  "List all issues that are overdue.",
+  "What is the percentage of open vs. closed issues?",
+  "Which issues have a description containing 'puertas'?",
+  "Which users currently have the most open issues?",
+  "What is the average time (in days) between createdAt and closedAt for all closed issues?",
+  "Group the issues by priority and give me the count per priority level.",
+  "Which disciplines have no open issues?",
+  "List issues with dueDate within the next 7 days.",
+  "Which issues have never been updated since creation?",
+  "Show me the top 3 most recently created issues.",
+  "How many issues were opened in the last month?",
+  "Which issues are assigned to 'Unknown_User' and still open?",
+  "What is the ratio of issues per issueTypeName (e.g., Design vs. Coordination)?",
+];
+
 const Bim360ProjectIssuesPage = () => {
   const { projectId, accountId } = useParams();
   const [cookies] = useState(document.cookie);
@@ -33,6 +53,13 @@ const Bim360ProjectIssuesPage = () => {
     status: null,
     issueTypeName: null,
   });
+
+  // Chat state
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [userMessage, setUserMessage] = useState("");
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const conversationRef = useRef(null);
 
   useEffect(() => {
     setLoading(true);
@@ -117,6 +144,75 @@ const Bim360ProjectIssuesPage = () => {
   const resetFilters = () =>
     setActiveFilters({ status: null, issueTypeName: null });
 
+  /* ---------- Chat Handlers ---------- */
+  useEffect(() => {
+    if (conversationRef.current) {
+      conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const toggleChat = () => {
+    setIsChatOpen((open) => {
+      const next = !open;
+      if (next && messages.length === 0) {
+        setMessages([
+          {
+            role: "assistant",
+            content: "Hi! Ask me anything about the project issues.",
+          },
+        ]);
+      }
+      return next;
+    });
+  };
+
+  const handleSendMessage = async () => {
+    const text = userMessage.trim();
+    if (!text || isSendingMessage) return;
+    setIsSendingMessage(true);
+    setMessages((m) => [...m, { role: "user", content: text }]);
+    setUserMessage("");
+
+    try {
+      const res = await fetch(`${backendUrl}/ai/issues`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountId,
+          projectId,
+          service: "issues",
+          question: text,
+        }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Status ${res.status}`);
+      }
+      const { answer } = await res.json();
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", content: answer || "No answer returned." },
+      ]);
+    } catch (err) {
+      console.error("Chat error:", err);
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", content: `Error: ${err.message}` },
+      ]);
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const handleSampleQuestionClick = (q) => setUserMessage(q);
+
   const dataContainers = useMemo(() => {
     if (!chartsData) return [];
 
@@ -147,83 +243,135 @@ const Bim360ProjectIssuesPage = () => {
     return <div className="text-red-600">{error}</div>;
   }
   return (
-    <BayerBim360MainLayout 
-    projectId={projectId}
-     accountId={accountId}
-    >
-      {error && (
-        <div
-          className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg"
-          role="alert"
+    <BayerBim360MainLayout projectId={projectId} accountId={accountId}>
+      <h1 className="text-2xl font-bold text-right mb-1">
+        Project Issues Report
+      </h1>
+      <h2 className="text-lg font-semibold text-right mb-4 text-gray-600">
+        {projectData?.name}
+      </h2>
+      <hr className="my-4 border-gray-300" />
+
+      <div className="mb-4 text-right space-x-2">
+        {!isChatOpen && (
+          <button
+            onClick={resetFilters}
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+          >
+            Reset Filters
+          </button>
+        )}
+        <button
+          onClick={toggleChat}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
-          <span className="font-medium">Error!</span> {error}
-        </div>
-      )}
+          {isChatOpen ? "Show Issues Table" : "Ask AI Assistant"}
+        </button>
+      </div>
 
-      {!issues && !error && (
-        <div
-          className="p-4 mb-4 text-sm text-yellow-700 bg-yellow-100 rounded-lg"
-          role="alert"
-        >
-          Issues data could not be loaded.
-        </div>
-      )}
-
-      {issues && (
-        <>
-          <h1 className="text-2xl text-right font-bold mb-1 text-gray-800">
-            Project Issues Report
-          </h1>
-          <h2 className="text-lg text-right font-semibold mb-4 text-gray-600">
-            {projectData.name}
-          </h2>
-
-          <hr className="my-4 border-t border-gray-300" />
-          <div className="mb-4 text-right space-x-2">
-            <button
-              onClick={resetFilters}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
-            >
-              Reset Filters
-            </button>
-
-            <div className="flex max-h-[775px] mb-8">
-              <section className="w-1/4 bg-gray-50 mr-4 rounded-lg shadow-md chart-with-dots">
-                <Slider {...reportsSliderSettings()}>
-                  {dataContainers.map((c) => (
-                    <div
-                      key={`${c.title}`}
-                      className="text-xl font-bold mt-4 p-6"
-                    >
-                      <h2 className="text-lg mb-2">{c.title}</h2>
-                      <hr className="border-gray-300 mb-1 text-xs" />
-                      <DonutChartGeneric
-                        counts={c.data}
-                        onSliceClick={(v) => handleFilterClick(c.filterKey, v)}
-                      />
-                      <div className="text-xs mt-1 h-40 overflow-y-auto">
-                        <h3 className="font-semibold mb-1">Totals:</h3>
-                        <hr className="border-gray-300 mb-1 text-xs" />
-                        {Object.entries(c.data).map(([k, v]) => (
-                          <p key={k}>{`${k}: ${v}`}</p>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </Slider>
-              </section>
-
-              {/* Tabla */}
-              <section className="w-3/4 bg-white p-4 rounded-lg shadow-md overflow-y-auto max-h-[775px]">
-                <IssuesTable
-                  issues={displayedIssues}
-                  customColumns={customTitles}
+      <div className="flex max-h-[775px] mb-8">
+        {/* Charts Carousel */}
+        <section className="w-1/4 bg-gray-50 p-2 mr-4 rounded-lg shadow">
+          <Slider {...reportsSliderSettings()}>
+            {dataContainers.map((c) => (
+              <div key={c.title} className="p-4">
+                <h3 className="text-lg font-semibold mb-2">{c.title}</h3>
+                <DonutChartGeneric
+                  counts={c.data}
+                  onSliceClick={(v) => handleFilterClick(c.filterKey, v)}
                 />
-              </section>
-            </div>
-          </div>
-        </>
-      )}
+                <div className="text-xs mt-2 overflow-y-auto max-h-32">
+                  {Object.entries(c.data).map(([k, v]) => (
+                    <p key={k}>{`${k}: ${v}`}</p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </Slider>
+        </section>
+
+        {/* Table or Chat */}
+        <section className="w-3/4 bg-white p-4 rounded-lg shadow overflow-y-auto">
+          {isChatOpen ? (
+            <>
+              <div
+                ref={conversationRef}
+                className="mb-4 max-h-96 overflow-y-auto border p-3 bg-gray-50 rounded"
+              >
+                {messages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`mb-3 flex ${
+                      msg.role === "user" ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`p-3 rounded-lg ${
+                        msg.role === "user"
+                          ? "bg-blue-100 text-blue-900"
+                          : "bg-gray-200 text-gray-800"
+                      }`}
+                      style={{ maxWidth: "80%", whiteSpace: "pre-wrap" }}
+                    >
+                      <strong className="block mb-1">
+                        {msg.role === "user" ? "You" : "Assistant"}
+                      </strong>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                {isSendingMessage && (
+                  <div className="flex justify-start">
+                    <div className="p-3 rounded-lg bg-gray-200 italic">
+                      Assistant is thinking...
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-1">Try:</p>
+                <div className="flex flex-wrap gap-2">
+                  {sampleQuestions.map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => handleSampleQuestionClick(q)}
+                      className="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded"
+                      disabled={isSendingMessage}
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-end gap-2">
+                <textarea
+                  value={userMessage}
+                  onChange={(e) => setUserMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your question..."
+                  className="flex-grow border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={2}
+                  disabled={isSendingMessage}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={isSendingMessage || !userMessage.trim()}
+                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+                >
+                  {isSendingMessage ? "..." : "Send"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <IssuesTable
+              issues={displayedIssues}
+              customColumns={customTitles}
+            />
+          )}
+        </section>
+      </div>
     </BayerBim360MainLayout>
   );
 };

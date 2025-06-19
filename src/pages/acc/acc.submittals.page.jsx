@@ -19,6 +19,16 @@ import SubmittalsSpecChart from "../../components/submittals_components/acc.subm
 
 import { reportsSliderSettings } from "../utils/project.slider.settings.utils.js";
 
+const backendUrl = import.meta.env.VITE_API_BACKEND_BASE_URL;
+
+const sampleQuestions = [
+  "How many submittals are in review?",
+  "List all submittals waiting for submission.",
+  "What percentage of submittals are closed?",
+  "Which submittals have no spec assigned?",
+  "Show me the top 5 most recent submittals.",
+];
+
 const AccProjectSubmittalsPage = () => {
   const [projectsData, setProjectsData] = useState(null);
   const [projectData, setProject] = useState({});
@@ -44,6 +54,19 @@ const AccProjectSubmittalsPage = () => {
     status: null,
     spec: null,
   });
+
+  // chat state
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [userMessage, setUserMessage] = useState("");
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const conversationRef = useRef(null);
+
+  // chat handlers
+  useEffect(() => {
+    if (conversationRef.current)
+      conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
+  }, [messages]);
 
   useEffect(() => {
     setLoading(true);
@@ -183,90 +206,184 @@ const AccProjectSubmittalsPage = () => {
     return <div className="text-red-600">{error}</div>;
   }
 
+  const toggleChat = () => {
+    setIsChatOpen((open) => {
+      if (!open && messages.length === 0) {
+        setMessages([
+          {
+            role: "assistant",
+            content: "Hi! Ask me anything about submittals.",
+          },
+        ]);
+      }
+      return !open;
+    });
+  };
+
+  const handleSendMessage = async () => {
+    const text = userMessage.trim();
+    if (!text || isSendingMessage) return;
+    setIsSendingMessage(true);
+    setMessages((m) => [...m, { role: "user", content: text }]);
+    setUserMessage("");
+    try {
+      const res = await fetch(`${backendUrl}/ai/submittals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountId,
+          projectId,
+          service: "submittals",
+          question: text,
+        }),
+      });
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      const { answer } = await res.json();
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", content: answer || "No answer" },
+      ]);
+    } catch (err) {
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", content: `Error: ${err.message}` },
+      ]);
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+  const handleSampleQuestionClick = (q) => setUserMessage(q);
+
   return (
-    <BayerAccMainLayout 
-    projectId={projectId}
-     accountId={accountId}
-    >
-      {error && (
-        <div
-          className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg"
-          role="alert"
+    <BayerAccMainLayout projectId={projectId} accountId={accountId}>
+      <h1 className="text-2xl font-bold text-right mb-1">
+        Submittals Report Page
+      </h1>
+      <h2 className="text-lg font-semibold text-right mb-4 text-gray-600">
+        {projectData?.name}
+      </h2>
+      <hr className="my-4 border-gray-300" />
+
+      <div className="mb-4 text-right space-x-2">
+        {!isChatOpen && (
+          <button
+            onClick={resetFilters}
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+          >
+            Reset Filters
+          </button>
+        )}
+        <button
+          onClick={toggleChat}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
-          <span className="font-medium">Error!</span> {error}
-        </div>
-      )}
+          {isChatOpen ? "Show Submittals Table" : "Ask AI Assistant"}
+        </button>
+      </div>
 
-      {!submittals && !error && (
-        <div
-          className="p-4 mb-4 text-sm text-yellow-700 bg-yellow-100 rounded-lg"
-          role="alert"
-        >
-          Submittals data could not be loaded.
-        </div>
-      )}
+      <div className="flex max-h-[775px] mb-8">
+        {/* Charts Carousel */}
+        <section className="w-1/4 bg-gray-50 p-2 mr-4 rounded-lg shadow">
+          <Slider {...reportsSliderSettings()}>
+            {dataContainers.map((c) => (
+              <div key={c.title} className="p-4">
+                <h3 className="text-lg font-semibold mb-2">{c.title}</h3>
+                <c.chart data={c.data} onSliceClick={c.onClickName} />
+                <div className="text-xs mt-2 overflow-y-auto max-h-32">
+                  {Object.entries(c.data).map(([k, v]) => (
+                    <p key={k}>{`${k}: ${v}`}</p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </Slider>
+        </section>
 
-      {submittals && (
-        <>
-          <h1 className="text-2xl text-right font-bold mb-1 text-gray-800">
-            RFIs Report Page
-          </h1>
-          <h2 className="text-lg text-right font-semibold mb-4 text-gray-600">
-            {projectData.name}
-          </h2>
-
-          <hr className="my-4 border-t border-gray-300" />
-
-          <div className="mb-4 text-right space-x-2">
-            <button
-              onClick={resetFilters}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
-            >
-              Reset Filters
-            </button>
-          </div>
-
-          <div className="flex max-h-[700px]">
-            {/* Slider (1/4) */}
-            <div className="w-1/4 bg-gray-50 mr-4 rounded-lg shadow-md chart-with-dots">
-              <Slider {...reportsSliderSettings()}>
-                {dataContainers.map((container, index) => (
-                  <div key={index} className="p-4 h-[600px]">
-                    <h2 className="text-xl font-bold mt-4 p-6">
-                      {container.title}
-                    </h2>
-                    <hr className="border-gray-300 mb-1 text-xs" />
-
-                    <container.chart
-                      data={container.data}
-                      onSliceClick={container.onClickName}
-                    />
-
+        {/* Table or Chat */}
+        <section className="w-3/4 bg-white p-4 rounded-lg shadow overflow-y-auto">
+          {isChatOpen ? (
+            <>
+              <div
+                ref={conversationRef}
+                className="mb-4 max-h-96 overflow-y-auto border p-3 bg-gray-50 rounded"
+              >
+                {messages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`mb-3 flex ${
+                      msg.role === "user" ? "justify-end" : "justify-start"
+                    }`}
+                  >
                     <div
-                      className="text-xs mt-1 h-40 overflow-y-auto"
-                      style={{ maxHeight: "450px" }}
+                      className={`p-3 rounded-lg ${
+                        msg.role === "user"
+                          ? "bg-blue-100 text-blue-900"
+                          : "bg-gray-200 text-gray-800"
+                      }`}
+                      style={{ maxWidth: "80%", whiteSpace: "pre-wrap" }}
                     >
-                      <h3 className="font-semibold mb-3">Totals:</h3>
-                      <hr className="border-gray-300 mb-1 text-xs" />
-                      {Object.entries(container.content).map(([key, val]) => (
-                        <p key={key}>{`${key}: ${val}`}</p>
-                      ))}
+                      <strong className="block mb-1">
+                        {msg.role === "user" ? "You" : "Assistant"}
+                      </strong>
+                      {msg.content}
                     </div>
                   </div>
                 ))}
-              </Slider>
-            </div>
+                {isSendingMessage && (
+                  <div className="flex justify-start">
+                    <div className="p-3 rounded-lg bg-gray-200 italic">
+                      Assistant is thinking...
+                    </div>
+                  </div>
+                )}
+              </div>
 
-            {/* Tabla (3/4) */}
-            <div className="w-3/4 bg-white gap-4 mb-4 p-4 rounded-lg shadow-md overflow-y-auto h-[700px]">
-              <SubmittalsTable
-                submittals={displayedSubmittals}
-                onViewDetails={(id) => handleFilterClick(id)()}
-              />
-            </div>
-          </div>
-        </>
-      )}
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-1">Try:</p>
+                <div className="flex flex-wrap gap-2">
+                  {sampleQuestions.map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => handleSampleQuestionClick(q)}
+                      className="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded"
+                      disabled={isSendingMessage}
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-end gap-2">
+                <textarea
+                  value={userMessage}
+                  onChange={(e) => setUserMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your question..."
+                  className="flex-grow border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={2}
+                  disabled={isSendingMessage}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={isSendingMessage || !userMessage.trim()}
+                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+                >
+                  {isSendingMessage ? "..." : "Send"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <SubmittalsTable submittals={displayedSubmittals} />
+          )}
+        </section>
+      </div>
     </BayerAccMainLayout>
   );
 };

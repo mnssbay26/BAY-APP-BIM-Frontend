@@ -15,6 +15,17 @@ import UsersTable from "../../components/users_componets/users.table.jsx";
 
 import ExcelJS from "exceljs";
 
+const backendUrl =
+  import.meta.env.VITE_API_BACKEND_BASE_URL || "http://localhost:3000";
+
+const sampleQuestions = [
+  "How many users belong to each company?",
+  "List users with no roles assigned.",
+  "What percentage of users are inactive?",
+  "Which users have both 'Admin' and 'Viewer' roles?",
+  "Show me the top 3 companies by user count.",
+];
+
 const AccProjectUsersPage = () => {
   // Get projectId and accountId from URL parameters
   const { projectId, accountId } = useParams();
@@ -35,6 +46,13 @@ const AccProjectUsersPage = () => {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [selectedRole, setSelectedRole] = useState(null);
+
+  // chat state
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [userMessage, setUserMessage] = useState("");
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const conversationRef = useRef(null);
 
   useEffect(() => {
     setLoading(true);
@@ -229,6 +247,66 @@ const AccProjectUsersPage = () => {
     exportToExcel(filteredUsers, `project-${projectId}-users.xlsx`);
   };
 
+  // chat handlers
+  useEffect(() => {
+    if (conversationRef.current)
+      conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
+  }, [messages]);
+
+  const toggleChat = () => {
+    setIsChatOpen((open) => {
+      if (!open && messages.length === 0) {
+        setMessages([
+          {
+            role: "assistant",
+            content: "Hi! Ask me anything about project users.",
+          },
+        ]);
+      }
+      return !open;
+    });
+  };
+
+  const handleSendMessage = async () => {
+    const text = userMessage.trim();
+    if (!text || isSendingMessage) return;
+    setIsSendingMessage(true);
+    setMessages((m) => [...m, { role: "user", content: text }]);
+    setUserMessage("");
+    try {
+      const res = await fetch(`${backendUrl}/ai/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountId,
+          projectId,
+          service: "users",
+          question: text,
+        }),
+      });
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      const { answer } = await res.json();
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", content: answer || "No answer" },
+      ]);
+    } catch (err) {
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", content: `Error: ${err.message}` },
+      ]);
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+  const handleSampleQuestionClick = (q) => setUserMessage(q);
+
   if (loading) {
     return <BayerLoadingOverlay message="Loading project details..." />;
   }
@@ -242,100 +320,150 @@ const AccProjectUsersPage = () => {
   console.debug("Company Data:", companyCounts);
 
   return (
-    <BayerAccMainLayout
-    projectId={projectId}
-     accountId={accountId}
-    >
-      
-      {error && (
-        <div
-          className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg"
-          role="alert"
+    <BayerAccMainLayout projectId={projectId} accountId={accountId}>
+      <h1 className="text-2xl text-right font-bold mb-1 text-gray-800">
+        Project Users Report
+      </h1>
+      <h2 className="text-lg text-right font-semibold mb-4 text-gray-600">
+        {projectData?.name}
+      </h2>
+      <hr className="my-4 border-t border-gray-300" />
+
+      {/* Top controls */}
+      <div className="flex justify-end space-x-2 mb-4">
+        <button
+          onClick={handleExportUsers}
+          className="btn-primary text-xs font-bold py-2 px-4 rounded"
         >
-          <span className="font-medium">Error!</span> {error}
-        </div>
-      )}
-
-      {!users && !error && (
-        <div
-          className="p-4 mb-4 text-sm text-yellow-700 bg-yellow-100 rounded-lg"
-          role="alert"
+          Export to Excel
+        </button>
+        {!isChatOpen && (
+          <button
+            onClick={resetFilters}
+            className="btn-primary text-xs font-bold py-2 px-4 rounded"
+          >
+            Reset Chart Filters
+          </button>
+        )}
+        <button
+          onClick={toggleChat}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
-          Project data could not be loaded.
+          {isChatOpen ? "Show Users Table" : "Ask AI Assistant"}
+        </button>
+      </div>
+
+      {/* Charts + totals */}
+      <div className="flex flex-wrap -mx-4 mb-8">
+        {/* Total Users */}
+        <div className="w-full md:w-1/5 px-4 mb-4">
+          <div className="h-64 bg-gray-50 rounded shadow flex flex-col items-center justify-center">
+            <h3 className="text-lg">Total Users</h3>
+            <p className="text-6xl font-bold text-blue-600 mt-2">
+              {totalUsers}
+            </p>
+          </div>
         </div>
-      )}
-
-      {users && (
-        <>
-          <h1 className="text-2xl text-right font-bold mb-1 text-gray-800">
-            Project Users Report
-          </h1>
-          <h2 className="text-lg text-right font-semibold mb-4 text-gray-600">
-            {projectData.name}
-          </h2>
-
-          <hr className="my-4 border-t border-gray-300" />
-
-          {/* Charts*/}
-          <div className="flex flex-wrap -mx-4 mt-4">
-            {/* First block: total users */}
-            <div className="w-full md:w-1/5 px-4 mb-4 h-[400px]">
-              <div className="h-64 w-full bg-gray-50 rounded shadow flex flex-col items-center justify-center h-[400px]">
-                <h3 className="text-lg">Total Users</h3>
-                <p className="text-6xl font-bold text-blue-600 mt-2">
-                  {totalUsers}
-                </p>
-              </div>
-            </div>
-
-            {/* Second block: Company Chart */}
-            <div className="w-full md:w-2/5 px-4 mb-4 h-[400px]">
-              <div className="h-full bg-white rounded shadow p-4">
-                <h3 className="text-lg mb-2">Company Chart</h3>
-                <hr className="my-4 border-1 borde1-gray-300" />
-                <BarChart_NivoCompanyUsers
-                  companyCounts={companyCounts}
-                  onCompanyClick={handleCompanyClick}
-                />
-              </div>
-            </div>
-
-            {/* Third block: Role Chart */}
-            <div className="w-full md:w-2/5 px-4 mb-4 h-[400px]">
-              <div className="h-full bg-white rounded shadow p-4">
-                <h3 className="text-lg mb-2">Role Chart</h3>
-                <hr className="my-4 border-1 borde1-gray-300" />
-                <BarChart_NivoRoleUsers
-                  roleCounts={roleCounts}
-                  onRoleClick={handleRoleClick}
-                />
-              </div>
-            </div>
+        {/* Company Chart */}
+        <div className="w-full md:w-2/5 px-4 mb-4">
+          <div className="h-64 bg-white rounded shadow p-4">
+            <h3 className="text-lg mb-2">Company Chart</h3>
+            <BarChart_NivoCompanyUsers
+              companyCounts={companyCounts}
+              onCompanyClick={handleCompanyClick}
+            />
           </div>
+        </div>
+        {/* Role Chart */}
+        <div className="w-full md:w-2/5 px-4 mb-4">
+          <div className="h-64 bg-white rounded shadow p-4">
+            <h3 className="text-lg mb-2">Role Chart</h3>
+            <BarChart_NivoRoleUsers
+              roleCounts={roleCounts}
+              onRoleClick={handleRoleClick}
+            />
+          </div>
+        </div>
+      </div>
 
-          {/* Table and buttons*/}
-          <div className="w-full mt-4">
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={handleExportUsers}
-                className="btn-primary text-xs font-bold py-2 px-4 rounded mb-4 "
-              >
-                Export Users to Excel
-              </button>
-              <button
-                onClick={resetFilters}
-                className="btn-primary text-xs font-bold py-2 px-4 rounded mb-4 "
-              >
-                Reset Chart Filters
-              </button>
+      {/* Chat or Table */}
+      <section className="bg-white p-4 rounded-lg shadow-md overflow-y-auto max-h-[600px]">
+        {isChatOpen ? (
+          <>
+            <div
+              ref={conversationRef}
+              className="mb-4 max-h-96 overflow-y-auto border p-3 bg-gray-50 rounded"
+            >
+              {messages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`mb-3 flex ${
+                    msg.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`p-3 rounded-lg ${
+                      msg.role === "user"
+                        ? "bg-blue-100 text-blue-900"
+                        : "bg-gray-200 text-gray-800"
+                    }`}
+                    style={{ maxWidth: "80%", whiteSpace: "pre-wrap" }}
+                  >
+                    <strong className="block mb-1">
+                      {msg.role === "user" ? "You" : "Assistant"}
+                    </strong>
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+              {isSendingMessage && (
+                <div className="flex justify-start">
+                  <div className="p-3 rounded-lg bg-gray-200 italic">
+                    Assistant is thinking...
+                  </div>
+                </div>
+              )}
             </div>
 
-            <hr className="my-2 border-t border-gray-300" />
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-1">Try:</p>
+              <div className="flex flex-wrap gap-2">
+                {sampleQuestions.map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => handleSampleQuestionClick(q)}
+                    className="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded"
+                    disabled={isSendingMessage}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            <UsersTable users={filteredUsers} />
-          </div>
-        </>
-      )}
+            <div className="flex items-end gap-2">
+              <textarea
+                value={userMessage}
+                onChange={(e) => setUserMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type your question..."
+                className="flex-grow border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={2}
+                disabled={isSendingMessage}
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={isSendingMessage || !userMessage.trim()}
+                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+              >
+                {isSendingMessage ? "..." : "Send"}
+              </button>
+            </div>
+          </>
+        ) : (
+          <UsersTable users={filteredUsers} />
+        )}
+      </section>
     </BayerAccMainLayout>
   );
 };

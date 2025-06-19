@@ -843,7 +843,7 @@ function DatabaseTable({
   const isolateDiscipline = useCallback(
     (rows) => {
       isolateObjectsInViewer(
-        window.data4Dviewer,
+        window.databaseviewer,
         rows.map((r) => r.dbId)
       );
     },
@@ -853,7 +853,7 @@ function DatabaseTable({
   const hideDisciplineAction = useCallback(
     (rows) => {
       hideObjectsInViewer(
-        window.data4Dviewer,
+        window.databaseviewer,
         rows.map((r) => r.dbId)
       );
     },
@@ -862,7 +862,7 @@ function DatabaseTable({
 
   const isolateRow = useCallback(
     (dbId) => {
-      isolateObjectsInViewer(window.data4Dviewer, [dbId]);
+      isolateObjectsInViewer(window.databaseviewer, [dbId]);
     },
     [isolateObjectsInViewer]
   );
