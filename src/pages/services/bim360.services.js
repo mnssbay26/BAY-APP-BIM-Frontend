@@ -39,7 +39,7 @@ export const fetchBim360ProjectData = async (projectId, accountId) => {
 
     const { data } = await response.json();
 
-    console.debug("Fetched BIM 360 project data:", data);
+    console.log("Fetched BIM 360 project data:", data);
 
     return data;
   } catch (error) {

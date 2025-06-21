@@ -64,7 +64,7 @@ function BayerBim360Sidebar() {
       label: "Model Database",
     },
     {
-      to: `/bim360/projects/${accountId}/${projectId}/digitaltwin`,
+      to: `/bim360/projects/${accountId}/${projectId}/digital-twin`,
       icon: FaDatabase,
       label: "Digital Twin",
     },

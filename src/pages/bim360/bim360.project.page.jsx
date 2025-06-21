@@ -48,73 +48,63 @@ const Bim360ProjectPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
   
-      Promise.all([
-        fetchBim360ProjectData(projectId, accountId),
-        fetchBim360ProjectIssues(projectId, accountId),
-        fetchBim360ProjectUsers(projectId, accountId),
-        fetchBim360ProjectRfis(projectId, accountId),
-        fetchBim360FederatedModel(projectId, accountId),
-      ])
-        .then(
-          ([
-            projectData,
-            issuesData,
-            usersData,
-            rfisData,
-            federatedModelResult,
-          ]) => {
-            if (projectData) {
-              setProjectData(projectData);
-            }
+    Promise.allSettled([
+      fetchBim360ProjectData(projectId, accountId),
+      fetchBim360ProjectIssues(projectId, accountId),
+      fetchBim360ProjectUsers(projectId, accountId),
+      fetchBim360ProjectRfis(projectId, accountId),
+      
+      fetchBim360FederatedModel(projectId, accountId),
+    ])
+      .then((results) => {
   
-            if (issuesData && issuesData.issues) {
-              setIssuesTotals({
-                total: issuesData.issues.length,
-                open: issuesData.issues.filter((issue) => issue.status === "open")
-                  .length,
-                answered: issuesData.issues.filter(
-                  (issue) => issue.status === "answered"
-                ).length,
-                closed: issuesData.issues.filter(
-                  (issue) => issue.status === "closed"
-                ).length,
-                completed: issuesData.issues.filter(
-                  (issue) => issue.status === "completed"
-                ).length,
-              });
-            }
+        if (results[0].status === "fulfilled" && results[0].value) {
+          setProjectData(results[0].value);
+        }
   
-            if (usersData && usersData.users) {
-              setUsersTotals({ total: usersData.users.length });
-            }
+        if (results[1].status === "fulfilled" && results[1].value && results[1].value.issues) {
+          const issuesData = results[1].value;
+          setIssuesTotals({
+            total: issuesData.issues.length,
+            open: issuesData.issues.filter((issue) => issue.status === "open").length,
+            answered: issuesData.issues.filter((issue) => issue.status === "answered").length,
+            closed: issuesData.issues.filter((issue) => issue.status === "closed").length,
+            completed: issuesData.issues.filter((issue) => issue.status === "completed").length,
+          });
+        }
   
-            if (rfisData && rfisData.rfis) {
-              setRfisTotals({
-                total: rfisData.rfis.length,
-                open: rfisData.rfis.filter((rfi) => rfi.status === "open").length,
-                answered: rfisData.rfis.filter((rfi) => rfi.status === "answered")
-                  .length,
-                closed: rfisData.rfis.filter((rfi) => rfi.status === "closed")
-                  .length,
-              });
-            }
-    
-            if (federatedModelResult) {
-              setFederatedModel(federatedModelResult);
-            }
-          }
-        )
-        .catch((err) => {
-          console.error("Error fetching project data:", err);
-          setError(err.message || "Failed to load project data");
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }, [projectId, accountId]);
+        if (results[2].status === "fulfilled" && results[2].value && results[2].value.users) {
+          setUsersTotals({ total: results[2].value.users.length });
+        }
+  
+        if (results[3].status === "fulfilled" && results[3].value && results[3].value.rfis) {
+          const rfisData = results[3].value;
+          setRfisTotals({
+            total: rfisData.rfis.length,
+            open: rfisData.rfis.filter((rfi) => rfi.status === "open").length,
+            answered: rfisData.rfis.filter((rfi) => rfi.status === "answered").length,
+            closed: rfisData.rfis.filter((rfi) => rfi.status === "closed").length,
+          });
+        }
+  
+       
+  
+        if (results[4].status === "fulfilled" && results[4].value) {
+          setFederatedModel(results[4].value);
+        }
+      })
+      .catch((err) => {
+        
+        console.error("Critical error in project data flow:", err);
+        setError(err.message || "Unexpected critical error loading project data");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [projectId, accountId]);
 
     console.debug("FederatedModel:", federatedModel);
 

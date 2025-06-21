@@ -39,7 +39,7 @@ export const fetchAccProjectData = async (projectId, accountId) => {
 
     const { data } = await response.json();
 
-    //console.debug("Fetched ACC project data:", data);
+    console.log("Fetched ACC project data:", data);
 
     return data;
   } catch (error) {

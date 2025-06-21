@@ -1,5 +1,5 @@
 /* global THREE, Autodesk */
-import { RoomSensorPanel } from "./room.sensor.panel";
+import { RoomSensorPanel } from "../viewer_extensions/room.sensor.panel";
 
 /**
  * Datos de ejemplo

@@ -9,22 +9,22 @@ import React, {
 import { useParams } from "react-router-dom";
 import { useCookies } from "react-cookie";
 
-import BayerAccMainLayout from "@/components/platform_general_components/acc_components/acc.main.layout.jsx";
+import BayerBim360MainLayout from "@/components/platform_general_components/bim360_components/bim360.main.layout.jsx";
 import BayerLoadingOverlay from "@/components/general/general.pages.loading.jsx";
 
 import { digitalTwinViewer } from "../../../utils/viewers/digital.twin.viewer";
 
 import {
-  fetchAccFederatedModel,
-  fetchAccProjectData,
-} from "../services/acc.services.js";
+  fetchBim360ProjectData,
+  fetchBim360FederatedModel,
+} from "../services/bim360.services.js";
 
 import RealTimeChart from "../../components/digital_twin_components/temperature.device.chart"
 import DevicePowerChart from "../../components/digital_twin_components/electrical.device.chart"
 import DeviceWaterChart from "../../components/digital_twin_components/water.device.chart"
 import DevicePopover from "../../components/digital_twin_components/power.device.chart"
 
-const AccDigitalTwin = () => {
+const Bim360DigitalTwin = () => {
   //General
   const { projectId, accountId } = useParams();
   const [cookies] = useCookies(["access_token"]);
@@ -43,8 +43,8 @@ const AccDigitalTwin = () => {
     setLoading(true);
     setError(null);
     Promise.all([
-      fetchAccFederatedModel(projectId, accountId),
-      fetchAccProjectData(projectId, accountId),
+      fetchBim360FederatedModel(projectId, accountId),
+       fetchBim360ProjectData(projectId, accountId),
     ])
       .then(([federatedModelResp, projectDataResp]) => {
         if (projectDataResp) {
@@ -106,7 +106,7 @@ const AccDigitalTwin = () => {
     }
 
   return (
-    <BayerAccMainLayout accountId={accountId} projectId={projectId}>
+    <BayerBim360MainLayout accountId={accountId} projectId={projectId}>
       {error && (
         <div
           className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg"
@@ -192,8 +192,8 @@ const AccDigitalTwin = () => {
           </div>
         </>
       )}
-    </BayerAccMainLayout>
+    </BayerBim360MainLayout>
   );
 };
 
-export default React.memo(AccDigitalTwin)
+export default React.memo(Bim360DigitalTwin)

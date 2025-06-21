@@ -13,6 +13,7 @@ import AccProjectRfisPage from "./pages/acc/acc.rfis.page.jsx";
 import AccProjectSubmittalsPage from "./pages/acc/acc.submittals.page.jsx";
 import AccProjectFolderPermitsPage from "./pages/acc/acc.folder.permits.page.jsx";
 import AccModelDatabasePage from "./pages/acc/acc.model.database.page.jsx";
+import AccDigitalTwin from "./pages/acc/acc.digital.twin.page";
 
 import Bim360ProjectsPage from "./pages/bim360/bim360.projects.page.jsx";
 import Bim360ProjectPage from "./pages/bim360/bim360.project.page.jsx";
@@ -21,6 +22,7 @@ import Bim360ProjectUsersPage from "./pages/bim360/bim360.users.page.jsx";
 import Bim360ProjectRfisPage from "./pages/bim360/bim360.rfis.page.jsx";
 import Bim360ProjectFolderPermitsPage from "./pages/bim360/bim360.folder.permits.page.jsx";
 import Bim360ModelDatabasePage from "./pages/bim360/bim360.model.database.page";
+import Bim360DigitalTwin from "./pages/bim360/bim360.digital.twin.page"
 
 import UnauthorizedPage from "./pages/general/UnaurhorizedPage.jsx";
 import NotFoundPage from "./pages/general/NotFoundPage";
@@ -64,6 +66,10 @@ function App() {
             path="/acc/projects/:accountId/:projectId/model-database"
             element={<AccModelDatabasePage />}
           />
+          <Route 
+            path = "/acc/projects/:accountId/:projectId/digital-twin"
+            element = {<AccDigitalTwin />}
+            />
 
           {/* BIM 360 */}
           <Route path="/bim360/projects/" element={<Bim360ProjectsPage />} />
@@ -91,6 +97,10 @@ function App() {
             path="/bim360/projects/:accountId/:projectId/model-database"
             element={<Bim360ModelDatabasePage />}
           />
+          <Route
+            path="/bim360/projects/:accountId/:projectId/digital-twin"
+            element = {<Bim360DigitalTwin/>}
+            />
 
           {/* Catch-all route for 404 */}
           <Route path="/unauthorized" element={<UnauthorizedPage />} />

@@ -1,8 +1,8 @@
 /* global THREE */
 /* global Autodesk */
 
-import temperatureData from "./temperatur.data";
-import waterUsageData from "./water.usage.data";
+import temperatureData from "../viewer_extensions/temperature.data";
+import waterUsageData from "../viewer_extensions/water.usage";
 
 class DataDeviceSensors extends Autodesk.Viewing.Extension {
   constructor(viewer, options) {
