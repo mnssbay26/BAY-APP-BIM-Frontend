@@ -15,4 +15,20 @@ export const authorizedUsers = [
     name: "Daniel Matthew Vomund",
     email: "danielmatthew.vomund@bayer.com",
   },
+  {
+    name: "Justyna Wanska",
+    email: "justyna.wanska1@bayer.com",
+  },
+  {
+    name: "Denis Dzambic",
+    email: "denis.dzambic@bayer.com",
+  },
+  {
+    name: "Thomas von Knebel",
+    email: "thomas.vonknebel@bayer.com",
+  },
+  {
+    name: "Virginia Hilger",
+    email: "virginia.hilger@bayer.com",
+  },
 ];
