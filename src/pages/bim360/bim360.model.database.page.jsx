@@ -58,703 +58,718 @@ const sampleQuestions = [
 ];
 
 const Bim360ModelDatabasePage = () => {
-    //General
-      const { projectId, accountId } = useParams();
-      const [cookies] = useCookies(["access_token"]);
-      const [federatedModel, setFederatedModel] = useState(null);
-      const [projectData, setProjectData] = useState(null);
-      const [error, setError] = useState(null);
-      const [loading, setLoading] = useState(true);
-    
-      //Table and Viewer
-      const defaultRowData = useMemo(() => defaultRow, []);
-      const propertyMapping = useMemo(() => propertyMappings["General"], []);
-      const [data, setData] = useState([defaultRow]);
-      const [collapsedDisciplines, setCollapsedDisciplines] = useState({});
-      const [selectedRows, setSelectedRows] = useState([]);
-      const [lastClickedRowNumber, setLastClickedRowNumber] = useState(null);
-      const [showViewer, setShowViewer] = useState(true);
-      const [showAIpanel, setAIpanel] = useState(false);
-      const [selectionCount, setSelectionCount] = useState(0);
-      const [categoryData, setCategoryData] = useState([]);
-      const [isLoadingTree, setIsLoadingTree] = useState(false);
-      const [isLoading, setIsLoading] = useState(true);
-      const [syncViewerSelection, setSyncViewerSelection] = useState(false);
-      const syncViewerSelectionRef = useRef(false);
-      const [selectedDisciplineForColor, setSelectedDisciplineForColor] =
-        useState("");
-      const [selectedColor, setSelectedColor] = useState("#ff0000");
-      const [isPullMenuOpen, setIsPullMenuOpen] = useState(false);
-    
-      //AI Panel
-      const [userMessage, setUserMessage] = useState("");
-      const [chatbotResponse, setChatbotResponse] = useState("");
-      const [conversationHistory, setConversationHistory] = useState(
-        JSON.parse(localStorage.getItem("conversationHistory")) || []
+  //General
+  const { projectId, accountId } = useParams();
+  const [cookies] = useCookies(["access_token"]);
+  const [federatedModel, setFederatedModel] = useState(null);
+  const [projectData, setProjectData] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  //Table and Viewer
+  const defaultRowData = useMemo(() => defaultRow, []);
+  const propertyMapping = useMemo(() => propertyMappings["General"], []);
+  const [data, setData] = useState([defaultRow]);
+  const [collapsedDisciplines, setCollapsedDisciplines] = useState({});
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [lastClickedRowNumber, setLastClickedRowNumber] = useState(null);
+  const [showViewer, setShowViewer] = useState(true);
+  const [showAIpanel, setAIpanel] = useState(false);
+  const [selectionCount, setSelectionCount] = useState(0);
+  const [categoryData, setCategoryData] = useState([]);
+  const [isLoadingTree, setIsLoadingTree] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [syncViewerSelection, setSyncViewerSelection] = useState(false);
+  const syncViewerSelectionRef = useRef(false);
+  const [selectedDisciplineForColor, setSelectedDisciplineForColor] =
+    useState("");
+  const [selectedColor, setSelectedColor] = useState("#ff0000");
+  const [isPullMenuOpen, setIsPullMenuOpen] = useState(false);
+
+  //AI Panel
+  const [userMessage, setUserMessage] = useState("");
+  const [chatbotResponse, setChatbotResponse] = useState("");
+  const [conversationHistory, setConversationHistory] = useState(
+    JSON.parse(localStorage.getItem("conversationHistory")) || []
+  );
+
+  const viewerWidthClass = useMemo(() => {
+    if (!showViewer) return "w-0";
+    return "w-2/5";
+  }, [showViewer]);
+
+  const tableWidthClass = useMemo(() => {
+    //Scenario 1 : No active Viewer, no active AI panel => table=w-full
+    if (!showViewer && !showAIpanel) return "w-full";
+
+    //Scenario 2 : Active Viewer, no active AI panel => table=w-3/5
+    if (showViewer && !showAIpanel) return "w-3/5";
+
+    //Scenario 3 : Active Viewer and AI panel => table=w-2/5
+    if (showViewer && showAIpanel) return "w-2/5";
+
+    //Scenario 4 : No active Viewer, active AI panel => table=w-4/5
+    if (!showViewer && showAIpanel) return "w-4/5";
+
+    return "w-full"; // fallback
+  }, [showViewer, showAIpanel]);
+
+  const aiWidthClass = useMemo(() => {
+    return showAIpanel ? "w-1/5" : "w-0";
+  }, [showAIpanel]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "conversationHistory",
+      JSON.stringify(conversationHistory)
+    );
+  }, [conversationHistory]);
+
+  const { handleAddRow, handleRemoveRow } = useTableControls(
+    setData,
+    defaultRow,
+    reorderRowsByDiscipline
+  );
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    Promise.all([
+      fetchBim360FederatedModel(projectId, accountId),
+      fetchBim360ProjectData(projectId, accountId),
+    ])
+      .then(([federatedModelResp, projectDataResp]) => {
+        if (projectDataResp) {
+          setProjectData(projectDataResp);
+        }
+
+        if (federatedModelResp) {
+          setFederatedModel(federatedModelResp);
+        }
+
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching federated model:", error);
+        setError(error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [projectId, accountId]);
+
+  const fieldsToCheck = useMemo(
+    () => [
+      "Description",
+      "Length",
+      "Width",
+      "Height",
+      "Perimeter",
+      "Area",
+      "Thickness",
+      "Volume",
+      "Level",
+      "Material",
+    ],
+    []
+  );
+
+  const updateRowNumbers = (rows) => {
+    return rows.map((row, idx) => ({ ...row, rowNumber: idx + 1 }));
+  };
+
+  useEffect(() => {
+    const handleDataExtracted = (event) => {
+      const { dbId, properties } = event.detail;
+      if (!properties || typeof properties !== "object") {
+        console.error("Invalid properties data:", properties);
+        return;
+      }
+
+      const propertiesArray = Object.entries(properties).map(([k, v]) => ({
+        displayName: k,
+        displayValue: v || "",
+      }));
+
+      const mappedProperties = propertiesArray.reduce((acc, prop) => {
+        const mappedKey = propertyMapping[prop.displayName];
+        let value = prop.displayValue;
+
+        if (mappedKey && mappedKey.toLowerCase().includes("date")) {
+          if (value.toLowerCase() === "no especificado") {
+            value = "";
+          } else {
+            const parts = value.split("/");
+            if (parts.length === 3) {
+              const [day, month, year] = parts;
+              value = `20${year}-${month.padStart(2, "0")}-${day.padStart(
+                2,
+                "0"
+              )}`;
+            }
+          }
+        }
+
+        if (mappedKey) {
+          acc[mappedKey] = value;
+        }
+        return acc;
+      }, {});
+
+      fieldsToCheck.forEach((field) => {
+        if (!mappedProperties[field]) mappedProperties[field] = "";
+      });
+
+      const elementType = mapCategoryToElementType(properties.Category) || "";
+      const newRow = {
+        ...defaultRow,
+        dbId,
+        ElementType: elementType,
+        ...mappedProperties,
+      };
+
+      setData((prevData) => {
+        const existsDbId = prevData.some(
+          (r) => String(r.dbId) === String(dbId)
+        );
+        if (existsDbId) {
+          alert("This element is already in the table");
+          return prevData;
+        }
+        const updatedData = [...prevData, newRow];
+        return updateRowNumbers(updatedData);
+      });
+    };
+
+    window.addEventListener("dbIdDataExtracted", handleDataExtracted);
+    return () => {
+      window.removeEventListener("dbIdDataExtracted", handleDataExtracted);
+    };
+  }, [propertyMapping, fieldsToCheck]);
+
+  const groupedData = useMemo(() => {
+    return data.reduce((acc, row) => {
+      const discipline = row.Discipline || "No Discipline";
+      if (!acc[discipline]) acc[discipline] = [];
+      acc[discipline].push(row);
+      return acc;
+    }, {});
+  }, [data]);
+
+  const calculateTotals = (rows) => {
+    const totals = {
+      Length: 0,
+      Width: 0,
+      Height: 0,
+      Perimeter: 0,
+      Area: 0,
+      Volume: 0,
+    };
+    rows.forEach((row) => {
+      Object.keys(totals).forEach((key) => {
+        totals[key] += parseFloat(row[key]) || 0;
+      });
+    });
+    return totals;
+  };
+
+  const totalsByDiscipline = useMemo(() => {
+    return Object.keys(groupedData).reduce((acc, disc) => {
+      acc[disc] = calculateTotals(groupedData[disc]);
+      return acc;
+    }, {});
+  }, [groupedData]);
+
+  const grandTotals = useMemo(() => calculateTotals(data), [data]);
+
+  const handleDisciplineChange = (row, newValue) => {
+    const index = data.findIndex((r) => r === row);
+    if (index === -1) return;
+
+    if (selectedRows.includes(row.dbId)) {
+      setData((prev) =>
+        prev.map((item) => {
+          if (selectedRows.includes(item.dbId)) {
+            return { ...item, Discipline: newValue };
+          }
+          return item;
+        })
+      );
+    } else {
+      const clone = [...data];
+      clone[index] = { ...clone[index], Discipline: newValue };
+      setData(clone);
+    }
+  };
+
+  const handleElementTypeChange = (row, newValue) => {
+    const index = data.findIndex((r) => r === row);
+    if (index === -1) return;
+
+    if (selectedRows.includes(row.dbId)) {
+      setData((prev) =>
+        prev.map((item) => {
+          if (selectedRows.includes(item.dbId)) {
+            return { ...item, ElementType: newValue };
+          }
+          return item;
+        })
+      );
+    } else {
+      const clone = [...data];
+      clone[index] = { ...clone[index], ElementType: newValue };
+      setData(clone);
+    }
+  };
+
+  const handleInputChange = (row, event) => {
+    const { name, value } = event.target;
+    const index = data.findIndex((r) => r === row);
+    if (index === -1) return;
+
+    const currentRow = data[index];
+    if (selectedRows.includes(currentRow.dbId)) {
+      setData((prev) =>
+        prev.map((item) => {
+          if (selectedRows.includes(item.dbId)) {
+            return { ...item, [name]: value };
+          }
+          return item;
+        })
+      );
+    } else {
+      const newArr = [...data];
+      newArr[index] = { ...currentRow, [name]: value };
+      setData(newArr);
+    }
+  };
+
+  const dataRef = useRef(data);
+
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
+
+  const handleViewerSelectionChanged = useCallback((dbIdArray) => {
+    const currentDbIdsInTable = dataRef.current.map((row) => Number(row.dbId));
+
+    const foundDbIds = dataRef.current
+      .filter((row) => {
+        const rowDbIdNum = Number(row.dbId);
+        const matched = dbIdArray.includes(rowDbIdNum);
+
+        return matched;
+      })
+      .map((row) => row.dbId);
+
+    setSelectedRows(foundDbIds.length ? foundDbIds : []);
+    setSelectionCount(dbIdArray.length);
+  }, []);
+
+  useEffect(() => {
+    if (!federatedModel || window.viewerInitialized) return;
+
+    const conditionalSelectionHandler = (dbIdArray) => {
+      if (!syncViewerSelectionRef.current) {
+        return;
+      }
+
+      handleViewerSelectionChanged(dbIdArray);
+    };
+
+    dataModel({
+      federatedModel,
+      setSelectionCount,
+      setSelection: conditionalSelectionHandler,
+      setIsLoadingTree,
+      setCategoryData,
+    });
+
+    window.viewerInitialized = true;
+  }, [federatedModel, handleViewerSelectionChanged]);
+
+  useEffect(() => {
+    syncViewerSelectionRef.current = syncViewerSelection;
+
+    if (syncViewerSelection && window.databaseviewer) {
+      const currentDbIds = window.databaseviewer.getSelection() || [];
+      handleViewerSelectionChanged(currentDbIds);
+    }
+  }, [syncViewerSelection, handleViewerSelectionChanged]);
+
+  const getCsrfToken = async () => {
+    const resp = await fetch(`${backendUrl}/csrf-token`, {
+      credentials: "include", // Esto es importante si usas cookies
+    });
+    const data = await resp.json();
+    return data.csrfToken;
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const csrfToken = await getCsrfToken();
+      // Clean numeric fields
+      const cleanedData = data.map((row) => {
+        const cleanedRow = { ...row };
+        numericFields.forEach((field) => {
+          const v = cleanedRow[field];
+          if (typeof v === "string" && !v.trim()) cleanedRow[field] = null;
+          else if (typeof v === "string") {
+            const n = parseFloat(v);
+            cleanedRow[field] = isNaN(n) ? null : n;
+          }
+        });
+        return cleanedRow;
+      });
+
+      // Send all model data in one request
+      const url = `${backendUrl}/modeldata/${accountId}/${projectId}/data`;
+      const resp = await fetch(url, {
+        method: "POST",
+        credentials: "include",
+        headers: { 
+          "Content-Type": "application/json",
+          "CSRF-Token": csrfToken,
+         },
+        body: JSON.stringify({
+          accountId,
+          projectId,
+          service: "model_data",
+          modelUrn: `${federatedModel}`,
+          items: cleanedData,
+        }),
+      });
+
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        throw new Error(`Error ${resp.status}: ${errorText}`);
+      }
+
+      const result = await resp.json();
+      alert("¡Datos enviados correctamente!");
+      // Refresh table
+      await handlePullData();
+    } catch (error) {
+      console.error("Error en handleSubmit:", error);
+      alert(`Error al enviar datos: ${error.message}`);
+    }
+  };
+
+    const disciplineNameFix = (name) => {
+  if (!name) return "";
+  return name.replace(/_/g, " ").replace(/\s+/g, " ").trim();
+};
+
+  const handlePullData = async (discipline = null) => {
+    try {
+      let url = `${backendUrl}/modeldata/${accountId}/${projectId}/data?modelUrn=${encodeURIComponent(
+        federatedModel
+      )}`;
+      if (discipline) {
+        url += `&discipline=${encodeURIComponent(discipline)}`;
+      }
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      console.log("Response:", response);
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.data && Array.isArray(result.data)) {
+          let tempRows = result.data.map((item) => {
+            const value = item || {};
+           return {
+              dbId: value.dbId || "",
+              Discipline: disciplineNameFix(value.Discipline) || "",
+              ElementType: disciplineNameFix(value.ElementType || ""),
+              TypeName: disciplineNameFix(value.TypeName || ""),
+              Description: disciplineNameFix(value.Description || ""),
+              TypeMark: disciplineNameFix(value.TypeMark || ""),
+              Length: value.Length ?? "",
+              Width: value.Width ?? "",
+              Height: value.Height ?? "",
+              Perimeter: value.Perimeter ?? "",
+              Area: value.Area ?? "",
+              Thickness: value.Thickness ?? "",
+              Volume: value.Volume ?? "",
+              Level: disciplineNameFix(value.Level || ""),
+              Material: disciplineNameFix(value.Material || ""),
+              Model: disciplineNameFix(value.Model || ""),
+              Manufacturer: disciplineNameFix(value.Manufacturer || ""),
+              EnergyConsumption: value.EnergyConsumption ?? "",
+              CarbonFootprint: value.CarbonFootprint ?? "",
+              WaterConsumption: value.WaterConsumption ?? "",
+              LifeCycleStage: value.LifeCycleStage || "",
+            };
+          });
+
+          tempRows = reorderRowsByDiscipline(tempRows);
+          setData(tempRows);
+          alert("Data successfully loaded");
+        } else {
+          alert("No data was found for this project.");
+        }
+      } else {
+        const errorData = await response.json();
+        console.error("Error fetching data:", errorData.message);
+        alert(`Error fetching data: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error("Request error:", error);
+      alert(`Request error: ${error.message}`);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest(".relative")) {
+        setIsPullMenuOpen(false);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
+  const handleApplyColorToDiscipline = async () => {
+    if (!selectedDisciplineForColor || !selectedColor) return;
+
+    try {
+      const url = `${backendUrl}/modeldata/${accountId}/${projectId}/data?modelUrn=${encodeURIComponent(federatedModel)}&discipline=${encodeURIComponent(selectedDisciplineForColor)}`;
+      const response = await fetch(url, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Error fetching discipline data.");
+
+      const result = await response.json();
+      if (!result.data) return;
+      const dbIds = result.data.map((item) => parseInt(item.dbId, 10));
+
+      // Solo enviamos dbIds y color al visor:
+      if (
+        window.databaseviewer &&
+        typeof window.databaseviewer.applyColorByDiscipline === "function"
+      ) {
+        window.databaseviewer.applyColorByDiscipline(dbIds, selectedColor);
+      } else {
+        console.warn("applyColorByDiscipline no disponible en el viewer.");
+      }
+    } catch (error) {
+      console.error("Error applying color:", error);
+    }
+  };
+
+  const cleanprojectId = projectId.substring(2);
+
+  const fetchAllData = async (projectId) => {
+    let allData = [];
+    let page = 1;
+    let limit = 250;
+    let hasMoreData = true;
+
+    try {
+      while (hasMoreData) {
+        const response = await fetch(
+          `${backendUrl}/modeldata/${accountId}/${projectId}/data?page=${page}&limit=${limit}`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+
+        if (!response.ok) {
+          console.error(`Error GET: ${response.status} ${response.statusText}`);
+          throw new Error("Error fetching data");
+        }
+
+        const result = await response.json();
+        const { data } = result;
+
+        if (!Array.isArray(data)) {
+          console.error("Unexpected data format:", result);
+          throw new Error("Wrong data format");
+        }
+
+        allData = [...allData, ...data];
+        if (data.length < limit) {
+          hasMoreData = false;
+        } else {
+          page++;
+        }
+      }
+      return allData;
+    } catch (error) {
+      console.error("Error fetching all data:", error);
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest(".relative")) {
+        setIsPullMenuOpen(false);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
+  const handleSendMessage = async () => {
+    setIsLoading(true);
+    try {
+      const lowerMsg = userMessage.toLowerCase();
+      let endpoint = `${backendUrl}/ai-modeldata`;
+      let isViewerCommand = false;
+      let isDBIDCommand = false;
+      let isUpdateCommand = false;
+      let isDateRangeCommand = false;
+
+      // Palabras clave para "update"
+      const updateKeywords = [
+        "change",
+        "update",
+        "modify",
+        "transform",
+        "upgrade",
+        "adjust",
+        "cambia",
+        "modifica",
+        "modificar",
+        "sustituye",
+        "sustituir",
+        "adapta",
+        "adaptar",
+      ];
+      const containsDBID = lowerMsg.includes("dbid");
+      const containsUpdateKeyword = updateKeywords.some((k) =>
+        lowerMsg.includes(k)
       );
 
-      
-        const viewerWidthClass = useMemo(() => {
-          if (!showViewer) return "w-0";
-          return "w-2/5";
-        }, [showViewer]);
-      
-        const tableWidthClass = useMemo(() => {
-          //Scenario 1 : No active Viewer, no active AI panel => table=w-full
-          if (!showViewer && !showAIpanel) return "w-full";
-      
-          //Scenario 2 : Active Viewer, no active AI panel => table=w-3/5
-          if (showViewer && !showAIpanel) return "w-3/5";
-      
-          //Scenario 3 : Active Viewer and AI panel => table=w-2/5
-          if (showViewer && showAIpanel) return "w-2/5";
-      
-          //Scenario 4 : No active Viewer, active AI panel => table=w-4/5
-          if (!showViewer && showAIpanel) return "w-4/5";
-      
-          return "w-full"; // fallback
-        }, [showViewer, showAIpanel]);
-      
-        const aiWidthClass = useMemo(() => {
-          return showAIpanel ? "w-1/5" : "w-0";
-        }, [showAIpanel]);
-      
-        useEffect(() => {
-          localStorage.setItem(
-            "conversationHistory",
-            JSON.stringify(conversationHistory)
-          );
-        }, [conversationHistory]);
-      
-        const { handleAddRow, handleRemoveRow } = useTableControls(
-          setData,
-          defaultRow,
-          reorderRowsByDiscipline
-        );
-      
-        
-          useEffect(() => {
-            setLoading(true);
-            setError(null);
-            Promise.all([
-              fetchBim360FederatedModel(projectId, accountId),
-              fetchBim360ProjectData(projectId, accountId),
-            ])
-              .then(([federatedModelResp, projectDataResp]) => {
-                if (projectDataResp) {
-                  setProjectData(projectDataResp);
-                }
-        
-                if (federatedModelResp) {
-                  setFederatedModel(federatedModelResp);
-                }
-        
-                setLoading(false);
-              })
-              .catch((error) => {
-                console.error("Error fetching federated model:", error);
-                setError(error);
-              })
-              .finally(() => {
-                setLoading(false);
-              });
-          }, [projectId, accountId]);
+      if (containsDBID && !containsUpdateKeyword) {
+        endpoint = `${backendUrl}/ai-modeldata/dbid-question`;
+        isDBIDCommand = true;
+      } else if (containsDBID && containsUpdateKeyword) {
+        endpoint = `${backendUrl}/ai-modeldata/update-field`;
+        isUpdateCommand = true;
+      } else if (
+        lowerMsg.startsWith("aisla") ||
+        lowerMsg.startsWith("oculta") ||
+        lowerMsg.startsWith("resalta") ||
+        lowerMsg.startsWith("isolate") ||
+        lowerMsg.startsWith("hide") ||
+        lowerMsg.startsWith("highlight")
+      ) {
+        endpoint = `${backendUrl}/ai-modeldata/autodesk-command`;
+        isViewerCommand = true;
+      } else if (
+        lowerMsg.startsWith("date range:") ||
+        (lowerMsg.includes("construction") && lowerMsg.includes("dates"))
+      ) {
+        endpoint = `${backendUrl}/ai-modeldata/date-range`;
+        isDateRangeCommand = true;
+      }
 
-           const fieldsToCheck = useMemo(
-              () => [
-                "Description",
-                "Length",
-                "Width",
-                "Height",
-                "Perimeter",
-                "Area",
-                "Thickness",
-                "Volume",
-                "Level",
-                "Material",
-              ],
-              []
-            );
-          
-            const updateRowNumbers = (rows) => {
-              return rows.map((row, idx) => ({ ...row, rowNumber: idx + 1 }));
-            };
-          
-            useEffect(() => {
-              const handleDataExtracted = (event) => {
-                const { dbId, properties } = event.detail;
-                if (!properties || typeof properties !== "object") {
-                  console.error("Invalid properties data:", properties);
-                  return;
-                }
-          
-                const propertiesArray = Object.entries(properties).map(([k, v]) => ({
-                  displayName: k,
-                  displayValue: v || "",
-                }));
-          
-                const mappedProperties = propertiesArray.reduce((acc, prop) => {
-                  const mappedKey = propertyMapping[prop.displayName];
-                  let value = prop.displayValue;
-          
-                  if (mappedKey && mappedKey.toLowerCase().includes("date")) {
-                    if (value.toLowerCase() === "no especificado") {
-                      value = "";
-                    } else {
-                      const parts = value.split("/");
-                      if (parts.length === 3) {
-                        const [day, month, year] = parts;
-                        value = `20${year}-${month.padStart(2, "0")}-${day.padStart(
-                          2,
-                          "0"
-                        )}`;
-                      }
-                    }
-                  }
-          
-                  if (mappedKey) {
-                    acc[mappedKey] = value;
-                  }
-                  return acc;
-                }, {});
-          
-                fieldsToCheck.forEach((field) => {
-                  if (!mappedProperties[field]) mappedProperties[field] = "";
-                });
-          
-                const elementType = mapCategoryToElementType(properties.Category) || "";
-                const newRow = {
-                  ...defaultRow,
-                  dbId,
-                  ElementType: elementType,
-                  ...mappedProperties,
-                };
-          
-                setData((prevData) => {
-                  const existsDbId = prevData.some(
-                    (r) => String(r.dbId) === String(dbId)
-                  );
-                  if (existsDbId) {
-                    alert("This element is already in the table");
-                    return prevData;
-                  }
-                  const updatedData = [...prevData, newRow];
-                  return updateRowNumbers(updatedData);
-                });
-              };
-          
-              window.addEventListener("dbIdDataExtracted", handleDataExtracted);
-              return () => {
-                window.removeEventListener("dbIdDataExtracted", handleDataExtracted);
-              };
-            }, [propertyMapping, fieldsToCheck]);
-          
-            const groupedData = useMemo(() => {
-              return data.reduce((acc, row) => {
-                const discipline = row.Discipline || "No Discipline";
-                if (!acc[discipline]) acc[discipline] = [];
-                acc[discipline].push(row);
-                return acc;
-              }, {});
-            }, [data]);
-          
-            const calculateTotals = (rows) => {
-              const totals = {
-                Length: 0,
-                Width: 0,
-                Height: 0,
-                Perimeter: 0,
-                Area: 0,
-                Volume: 0,
-              };
-              rows.forEach((row) => {
-                Object.keys(totals).forEach((key) => {
-                  totals[key] += parseFloat(row[key]) || 0;
-                });
-              });
-              return totals;
-            };
-          
-            const totalsByDiscipline = useMemo(() => {
-              return Object.keys(groupedData).reduce((acc, disc) => {
-                acc[disc] = calculateTotals(groupedData[disc]);
-                return acc;
-              }, {});
-            }, [groupedData]);
-          
-            const grandTotals = useMemo(() => calculateTotals(data), [data]);
-          
-            const handleDisciplineChange = (row, newValue) => {
-              const index = data.findIndex((r) => r === row);
-              if (index === -1) return;
-          
-              if (selectedRows.includes(row.dbId)) {
-                setData((prev) =>
-                  prev.map((item) => {
-                    if (selectedRows.includes(item.dbId)) {
-                      return { ...item, Discipline: newValue };
-                    }
-                    return item;
-                  })
-                );
-              } else {
-                const clone = [...data];
-                clone[index] = { ...clone[index], Discipline: newValue };
-                setData(clone);
-              }
-            };
-          
-            const handleElementTypeChange = (row, newValue) => {
-              const index = data.findIndex((r) => r === row);
-              if (index === -1) return;
-          
-              if (selectedRows.includes(row.dbId)) {
-                setData((prev) =>
-                  prev.map((item) => {
-                    if (selectedRows.includes(item.dbId)) {
-                      return { ...item, ElementType: newValue };
-                    }
-                    return item;
-                  })
-                );
-              } else {
-                const clone = [...data];
-                clone[index] = { ...clone[index], ElementType: newValue };
-                setData(clone);
-              }
-            };
-          
-            const handleInputChange = (row, event) => {
-              const { name, value } = event.target;
-              const index = data.findIndex((r) => r === row);
-              if (index === -1) return;
-          
-              const currentRow = data[index];
-              if (selectedRows.includes(currentRow.dbId)) {
-                setData((prev) =>
-                  prev.map((item) => {
-                    if (selectedRows.includes(item.dbId)) {
-                      return { ...item, [name]: value };
-                    }
-                    return item;
-                  })
-                );
-              } else {
-                const newArr = [...data];
-                newArr[index] = { ...currentRow, [name]: value };
-                setData(newArr);
-              }
-            };
-          
-            const dataRef = useRef(data);
-          
-            useEffect(() => {
-              dataRef.current = data;
-            }, [data]);
-          
-            const handleViewerSelectionChanged = useCallback((dbIdArray) => {
-              const currentDbIdsInTable = dataRef.current.map((row) => Number(row.dbId));
-          
-              const foundDbIds = dataRef.current
-                .filter((row) => {
-                  const rowDbIdNum = Number(row.dbId);
-                  const matched = dbIdArray.includes(rowDbIdNum);
-          
-                  return matched;
-                })
-                .map((row) => row.dbId);
-          
-              setSelectedRows(foundDbIds.length ? foundDbIds : []);
-              setSelectionCount(dbIdArray.length);
-            }, []);
-          
-            useEffect(() => {
-              if (!federatedModel || window.viewerInitialized) return;
-          
-              const conditionalSelectionHandler = (dbIdArray) => {
-                if (!syncViewerSelectionRef.current) {
-                  return;
-                }
-          
-                handleViewerSelectionChanged(dbIdArray);
-              };
-          
-              dataModel({
-                federatedModel,
-                setSelectionCount,
-                setSelection: conditionalSelectionHandler,
-                setIsLoadingTree,
-                setCategoryData,
-              });
-          
-              window.viewerInitialized = true;
-            }, [federatedModel, handleViewerSelectionChanged]);
-          
-            useEffect(() => {
-              syncViewerSelectionRef.current = syncViewerSelection;
-          
-              if (syncViewerSelection && window.databaseviewer) {
-                const currentDbIds = window.databaseviewer.getSelection() || [];
-                handleViewerSelectionChanged(currentDbIds);
-              }
-            }, [syncViewerSelection, handleViewerSelectionChanged]);
-          
-            const handleSubmit = async () => {
-              try {
-                // Clean numeric fields
-                const cleanedData = data.map((row) => {
-                  const cleanedRow = { ...row };
-                  numericFields.forEach((field) => {
-                    const v = cleanedRow[field];
-                    if (typeof v === "string" && !v.trim()) cleanedRow[field] = null;
-                    else if (typeof v === "string") {
-                      const n = parseFloat(v);
-                      cleanedRow[field] = isNaN(n) ? null : n;
-                    }
-                  });
-                  return cleanedRow;
-                });
-          
-                // Send all model data in one request
-                const url = `${backendUrl}/modeldata/${accountId}/${projectId}/data`;
-                const resp = await fetch(url, {
-                  method: "POST",
-                  credentials: "include",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    accountId,
-                    projectId,
-                    service: "model-data",
-                    modelUrn: `${federatedModel}`,
-                    items: cleanedData,
-                  }),
-                });
-          
-                if (!resp.ok) {
-                  const errorText = await resp.text();
-                  throw new Error(`Error ${resp.status}: ${errorText}`);
-                }
-          
-                const result = await resp.json();
-                alert("¡Datos enviados correctamente!");
-                // Refresh table
-                await handlePullData();
-              } catch (error) {
-                console.error("Error en handleSubmit:", error);
-                alert(`Error al enviar datos: ${error.message}`);
-              }
-            };
-          
-            const handlePullData = async (discipline = null) => {
-              try {
-                let url = `${backendUrl}/modeldata/${accountId}/${projectId}/data?modelUrn=${encodeURIComponent(federatedModel)}`;
-                if (discipline) {
-                  url += `&discipline=${encodeURIComponent(discipline)}`;
-                }
-          
-                const response = await fetch(url, {
-                  method: "GET",
-                  headers: { "Content-Type": "application/json" },
-                  credentials: "include",
-                });
-          
-                console.log("Response:", response);
-          
-                if (response.ok) {
-                  const result = await response.json();
-                  if (result.data && Array.isArray(result.data)) {
-                    let tempRows = result.data.map((item) => {
-                      const value = item || {};
-                      return {
-                        dbId: value.dbId || "",
-                        Discipline: value.Discipline || "",
-                        ElementType: value.ElementType || "",
-                        TypeName: value.TypeName || "",
-                        Description: value.Description || "",
-                        TypeMark: value.TypeMark || "",
-                        Length: value.Length ?? "",
-                        Width: value.Width ?? "",
-                        Height: value.Height ?? "",
-                        Perimeter: value.Perimeter ?? "",
-                        Area: value.Area ?? "",
-                        Thickness: value.Thickness ?? "",
-                        Volume: value.Volume ?? "",
-                        Level: value.Level || "",
-                        Material: value.Material || "",
-                        Model: value.Model || "",
-                        Manufacturer: value.Manufacturer || "",
-                        EnergyConsumption: value.EnergyConsumption ?? "",
-                        CarbonFootprint: value.CarbonFootprint ?? "",
-                        WaterConsumption: value.WaterConsumption ?? "",
-                        LifeCycleStage: value.LifeCycleStage || "",
-                      };
-                    });
-          
-                    tempRows = reorderRowsByDiscipline(tempRows);
-                    setData(tempRows);
-                    alert("Data successfully loaded");
-                  } else {
-                    alert("No data was found for this project.");
-                  }
-                } else {
-                  const errorData = await response.json();
-                  console.error("Error fetching data:", errorData.message);
-                  alert(`Error fetching data: ${errorData.message}`);
-                }
-              } catch (error) {
-                console.error("Request error:", error);
-                alert(`Request error: ${error.message}`);
-              }
-            };
-          
-            useEffect(() => {
-              const handleClickOutside = (event) => {
-                if (!event.target.closest(".relative")) {
-                  setIsPullMenuOpen(false);
-                }
-              };
-              document.addEventListener("click", handleClickOutside);
-              return () => {
-                document.removeEventListener("click", handleClickOutside);
-              };
-            }, []);
-          
-            const handleApplyColorToDiscipline = async () => {
-              if (!selectedDisciplineForColor || !selectedColor) return;
-          
-              try {
-                const url = `${backendUrl}/modeldata/${accountId}/${projectId}/data?discipline=${encodeURIComponent(
-                  selectedDisciplineForColor
-                )}`;
-                const response = await fetch(url, {
-                  method: "GET",
-                  headers: { "Content-Type": "application/json" },
-                  credentials: "include",
-                });
-                if (!response.ok) throw new Error("Error fetching discipline data.");
-          
-                const result = await response.json();
-                if (!result.data) return;
-                const dbIds = result.data.map((item) => parseInt(item.dbId, 10));
-          
-                // Solo enviamos dbIds y color al visor:
-                if (
-                  window.databaseviewer &&
-                  typeof window.databaseviewer.applyColorByDiscipline === "function"
-                ) {
-                  window.databaseviewer.applyColorByDiscipline(dbIds, selectedColor);
-                } else {
-                  console.warn("applyColorByDiscipline no disponible en el viewer.");
-                }
-              } catch (error) {
-                console.error("Error applying color:", error);
-              }
-            };
-          
-            const cleanprojectId = projectId.substring(2);
-          
-            const fetchAllData = async (projectId) => {
-              let allData = [];
-              let page = 1;
-              let limit = 250;
-              let hasMoreData = true;
-          
-              try {
-                while (hasMoreData) {
-                  const response = await fetch(
-                    `${backendUrl}/modeldata/${accountId}/${projectId}/data?page=${page}&limit=${limit}`,
-                    {
-                      method: "GET",
-                      headers: { "Content-Type": "application/json" },
-                    }
-                  );
-          
-                  if (!response.ok) {
-                    console.error(`Error GET: ${response.status} ${response.statusText}`);
-                    throw new Error("Error fetching data");
-                  }
-          
-                  const result = await response.json();
-                  const { data } = result;
-          
-                  if (!Array.isArray(data)) {
-                    console.error("Unexpected data format:", result);
-                    throw new Error("Wrong data format");
-                  }
-          
-                  allData = [...allData, ...data];
-                  if (data.length < limit) {
-                    hasMoreData = false;
-                  } else {
-                    page++;
-                  }
-                }
-                return allData;
-              } catch (error) {
-                console.error("Error fetching all data:", error);
-                return [];
-              }
-            };
-          
-            useEffect(() => {
-              const handleClickOutside = (event) => {
-                if (!event.target.closest(".relative")) {
-                  setIsPullMenuOpen(false);
-                }
-              };
-              document.addEventListener("click", handleClickOutside);
-              return () => {
-                document.removeEventListener("click", handleClickOutside);
-              };
-            }, []);
-          
-            const handleSendMessage = async () => {
-              setIsLoading(true);
-              try {
-                const lowerMsg = userMessage.toLowerCase();
-                let endpoint = `${backendUrl}/ai-modeldata`;
-                let isViewerCommand = false;
-                let isDBIDCommand = false;
-                let isUpdateCommand = false;
-                let isDateRangeCommand = false;
-          
-                // Palabras clave para "update"
-                const updateKeywords = [
-                  "change",
-                  "update",
-                  "modify",
-                  "transform",
-                  "upgrade",
-                  "adjust",
-                  "cambia",
-                  "modifica",
-                  "modificar",
-                  "sustituye",
-                  "sustituir",
-                  "adapta",
-                  "adaptar",
-                ];
-                const containsDBID = lowerMsg.includes("dbid");
-                const containsUpdateKeyword = updateKeywords.some((k) =>
-                  lowerMsg.includes(k)
-                );
-          
-                if (containsDBID && !containsUpdateKeyword) {
-                  endpoint = `${backendUrl}/ai-modeldata/dbid-question`;
-                  isDBIDCommand = true;
-                } else if (containsDBID && containsUpdateKeyword) {
-                  endpoint = `${backendUrl}/ai-modeldata/update-field`;
-                  isUpdateCommand = true;
-                } else if (
-                  lowerMsg.startsWith("aisla") ||
-                  lowerMsg.startsWith("oculta") ||
-                  lowerMsg.startsWith("resalta") ||
-                  lowerMsg.startsWith("isolate") ||
-                  lowerMsg.startsWith("hide") ||
-                  lowerMsg.startsWith("highlight")
-                ) {
-                  endpoint = `${backendUrl}/ai-modeldata/autodesk-command`;
-                  isViewerCommand = true;
-                } else if (
-                  lowerMsg.startsWith("date range:") ||
-                  (lowerMsg.includes("construction") && lowerMsg.includes("dates"))
-                ) {
-                  endpoint = `${backendUrl}/ai-modeldata/date-range`;
-                  isDateRangeCommand = true;
-                }
-          
-                let response = await fetch(endpoint, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    message: userMessage,
-                    projectId: cleanprojectId,
-                    contextData: null,
-                  }),
-                });
-          
-                let data = await response.json();
-          
-                if (isDBIDCommand) {
-                  setChatbotResponse(`${data.reply}\nData: ${JSON.stringify(data.data)}`);
-                } else if (isUpdateCommand) {
-                  setChatbotResponse(data.reply);
-                  const affectedDiscipline = data.discipline;
-                  if (affectedDiscipline) {
-                    await handlePullData(affectedDiscipline);
-                  } else {
-                    await handlePullData();
-                  }
-                } else if (isDateRangeCommand) {
-                  setChatbotResponse(data.reply);
-                } else if (!isViewerCommand) {
-                  if (data.reply.includes("ha sido actualizado")) {
-                    setChatbotResponse(data.reply);
-                    setIsLoading(false);
-          
-                    const affectedDiscipline = data.discipline;
-                    if (affectedDiscipline) {
-                      await handlePullData(affectedDiscipline);
-                    } else {
-                      await handlePullData();
-                    }
-                    return;
-                  }
-                  if (!data.reply.includes("No encontré elementos")) {
-                    setChatbotResponse(data.reply);
-                    setIsLoading(false);
-                    return;
-                  }
-                  // Reintentar con todo el contexto
-                  const allData = await fetchAllData(cleanprojectId);
-                  response = await fetch(`${backendUrl}/ai-modeldata`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      message: userMessage,
-                      projectId: cleanprojectId,
-                      contextData: allData,
-                    }),
-                  });
-          
-                  data = await response.json();
-                  setChatbotResponse(data.reply);
-                } else {
-                  // Comando para el visor
-                  setChatbotResponse(data.reply);
-                  if (data.dbIds && data.action) {
-                    switch (data.action) {
-                      case "isolate":
-                        isolateObjectsInViewer(window.data4Dviewer, data.dbIds);
-                        break;
-                      case "hide":
-                        hideObjectsInViewer(window.data4Dviewer, data.dbIds);
-                        break;
-                      case "highlight":
-                        highlightObjectsInViewer(window.data4Dviewer, data.dbIds);
-                        break;
-                      default:
-                        break;
-                    }
-                  }
-                }
-              } catch (error) {
-                console.error("Error en el chatbot:", error);
-                setChatbotResponse("Hubo un error al procesar tu solicitud.");
-              } finally {
-                setIsLoading(false);
-              }
-            };
-          
-            if (loading) {
-              return <BayerLoadingOverlay message="Loading project details..." />;
-            }
-          
-            if (error) {
-              return <div className="text-red-600">{error}</div>;
-            }
-          
- return (
+      let response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMessage,
+          projectId: cleanprojectId,
+          contextData: null,
+        }),
+      });
+
+      let data = await response.json();
+
+      if (isDBIDCommand) {
+        setChatbotResponse(`${data.reply}\nData: ${JSON.stringify(data.data)}`);
+      } else if (isUpdateCommand) {
+        setChatbotResponse(data.reply);
+        const affectedDiscipline = data.discipline;
+        if (affectedDiscipline) {
+          await handlePullData(affectedDiscipline);
+        } else {
+          await handlePullData();
+        }
+      } else if (isDateRangeCommand) {
+        setChatbotResponse(data.reply);
+      } else if (!isViewerCommand) {
+        if (data.reply.includes("ha sido actualizado")) {
+          setChatbotResponse(data.reply);
+          setIsLoading(false);
+
+          const affectedDiscipline = data.discipline;
+          if (affectedDiscipline) {
+            await handlePullData(affectedDiscipline);
+          } else {
+            await handlePullData();
+          }
+          return;
+        }
+        if (!data.reply.includes("No encontré elementos")) {
+          setChatbotResponse(data.reply);
+          setIsLoading(false);
+          return;
+        }
+        // Reintentar con todo el contexto
+        const allData = await fetchAllData(cleanprojectId);
+        response = await fetch(`${backendUrl}/ai-modeldata`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: userMessage,
+            projectId: cleanprojectId,
+            contextData: allData,
+          }),
+        });
+
+        data = await response.json();
+        setChatbotResponse(data.reply);
+      } else {
+        // Comando para el visor
+        setChatbotResponse(data.reply);
+        if (data.dbIds && data.action) {
+          switch (data.action) {
+            case "isolate":
+              isolateObjectsInViewer(window.data4Dviewer, data.dbIds);
+              break;
+            case "hide":
+              hideObjectsInViewer(window.data4Dviewer, data.dbIds);
+              break;
+            case "highlight":
+              highlightObjectsInViewer(window.data4Dviewer, data.dbIds);
+              break;
+            default:
+              break;
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error en el chatbot:", error);
+      setChatbotResponse("Hubo un error al procesar tu solicitud.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <BayerLoadingOverlay message="Loading project details..." />;
+  }
+
+  if (error) {
+    return <div className="text-red-600">{error}</div>;
+  }
+
+  return (
     <BayerBim360MainLayout accountId={accountId} projectId={projectId}>
       {error && (
         <div

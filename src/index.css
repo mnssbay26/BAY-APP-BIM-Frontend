@@ -84,3 +84,139 @@
   left: 50%;
   transform: translateX(-50%);
 }
+
+.extractDataIcon .adsk-button-icon {
+    background-color: #00BCFF; /* Bayer Blue */
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%; /* Para que quede redondo */
+    font-size: 12px;
+  }
+  .extractDataIcon .adsk-button-icon::after {
+    content: "ED";  /* Por ejemplo, la inicial de Bayer */
+  }
+  
+  /* Botón para "Select Category" – se usará el color de CS Engineering */
+  .selectCategoryIcon .adsk-button-icon {
+    background-color: #89D329; /* CS Engineering */
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 10px;
+  }
+
+  .selectCategoryIcon .adsk-button-icon::after {
+    content: "CS";  /* Siglas de CS Engineering */
+  }
+  
+  /* Botón para "Select Visible" – se usará el color de Crop Science */
+  .selectVisibleIcon .adsk-button-icon {
+    background-color: #89D329; /* Crop Science */
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 10px;
+  }
+  .selectVisibleIcon .adsk-button-icon::after {
+    content: "SV";  /* Por ejemplo, para Crop Science */
+  }
+  
+  /* Botón para "Show DbId Extension" – nuevamente con Bayer */
+  .showDbIdExtensionIcon .adsk-button-icon {
+    background-color: #00BCFF; /* Bayer Blue */
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 10px;
+  }
+  .showDbIdExtensionIcon .adsk-button-icon::after {
+    content: "SD";  /* Siglas para “DbId” */
+  }
+  
+  /* Botón para "Select Type Category" – CS Engineering */
+  .selectTypeCategoryIcon .adsk-button-icon {
+    background-color: #89D329; /* CS Engineering */
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 10px;
+  }
+  .selectTypeCategoryIcon .adsk-button-icon::after {
+    content: "T";  /* O la letra o sigla que prefieras */
+  }
+  
+  /* Botón para "Data7D Extension" – Crop Science (o el que prefieras) */
+  .DataDeviceSensorsClass .adsk-button-icon {
+    background-color: #10384F; /* Crop Science */
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 10px;
+  }
+  .DataDeviceSensorsClass .adsk-button-icon::after {
+    content: "RD";  /* Siglas para identificarlo */
+  }
+  
+  /* Botón para "Room Sensor" – Bayer */
+  .RoomSensorBtnClass .adsk-button-icon {
+    background-color: #10384F; /* Bayer Blue */
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 10px;
+  }
+  .RoomSensorBtnClass .adsk-button-icon::after {
+    content: "RS";  /* Siglas de Room Sensor */
+  }
+  
+  /* Botón para "Room Heatmap" – CS Engineering */
+  .RoomHeatmapBtnClass .adsk-button-icon {
+    background-color: #10384F; /* CS Engineering */
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 10px;
+  }
+  .RoomHeatmapBtnClass .adsk-button-icon::after {
+    content: "RH";  /* Siglas de Room Heatmap */
+  }
