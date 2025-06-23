@@ -397,8 +397,17 @@ const AccModelDatabasePage = () => {
     }
   }, [syncViewerSelection, handleViewerSelectionChanged]);
 
+  const getCsrfToken = async () => {
+  const resp = await fetch(`${backendUrl}/csrf-token`, {
+    credentials: "include", // Esto es importante si usas cookies
+  });
+  const data = await resp.json();
+  return data.csrfToken;
+};
+
   const handleSubmit = async () => {
     try {
+      const csrfToken = await getCsrfToken();
       // Clean numeric fields
       const cleanedData = data.map((row) => {
         const cleanedRow = { ...row };
@@ -418,11 +427,14 @@ const AccModelDatabasePage = () => {
       const resp = await fetch(url, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "CSRF-Token": csrfToken,
+        },
         body: JSON.stringify({
           accountId,
           projectId,
-          service: "model-data",
+          service: "model_data",
           modelUrn: `${federatedModel}`,
           items: cleanedData,
         }),
@@ -441,7 +453,12 @@ const AccModelDatabasePage = () => {
       console.error("Error en handleSubmit:", error);
       alert(`Error al enviar datos: ${error.message}`);
     }
-  };
+  }
+
+  const disciplineNameFix = (name) => {
+  if (!name) return "";
+  return name.replace(/_/g, " ").replace(/\s+/g, " ").trim();
+};
 
   const handlePullData = async (discipline = null) => {
     try {
@@ -466,11 +483,11 @@ const AccModelDatabasePage = () => {
             const value = item || {};
             return {
               dbId: value.dbId || "",
-              Discipline: value.Discipline || "",
-              ElementType: value.ElementType || "",
-              TypeName: value.TypeName || "",
-              Description: value.Description || "",
-              TypeMark: value.TypeMark || "",
+              Discipline: disciplineNameFix(value.Discipline) || "",
+              ElementType: disciplineNameFix(value.ElementType || ""),
+              TypeName: disciplineNameFix(value.TypeName || ""),
+              Description: disciplineNameFix(value.Description || ""),
+              TypeMark: disciplineNameFix(value.TypeMark || ""),
               Length: value.Length ?? "",
               Width: value.Width ?? "",
               Height: value.Height ?? "",
@@ -478,10 +495,10 @@ const AccModelDatabasePage = () => {
               Area: value.Area ?? "",
               Thickness: value.Thickness ?? "",
               Volume: value.Volume ?? "",
-              Level: value.Level || "",
-              Material: value.Material || "",
-              Model: value.Model || "",
-              Manufacturer: value.Manufacturer || "",
+              Level: disciplineNameFix(value.Level || ""),
+              Material: disciplineNameFix(value.Material || ""),
+              Model: disciplineNameFix(value.Model || ""),
+              Manufacturer: disciplineNameFix(value.Manufacturer || ""),
               EnergyConsumption: value.EnergyConsumption ?? "",
               CarbonFootprint: value.CarbonFootprint ?? "",
               WaterConsumption: value.WaterConsumption ?? "",
@@ -522,9 +539,7 @@ const AccModelDatabasePage = () => {
     if (!selectedDisciplineForColor || !selectedColor) return;
 
     try {
-      const url = `${backendUrl}/modeldata/${accountId}/${projectId}/data?discipline=${encodeURIComponent(
-        selectedDisciplineForColor
-      )}`;
+      const url = `${backendUrl}/modeldata/${accountId}/${projectId}/data?modelUrn=${encodeURIComponent(federatedModel)}&discipline=${encodeURIComponent(selectedDisciplineForColor)}`;
       const response = await fetch(url, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
@@ -535,6 +550,8 @@ const AccModelDatabasePage = () => {
       const result = await response.json();
       if (!result.data) return;
       const dbIds = result.data.map((item) => parseInt(item.dbId, 10));
+
+      console.log("dbIds a pintar:", dbIds);
 
       // Solo enviamos dbIds y color al visor:
       if (
