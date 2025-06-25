@@ -10,15 +10,29 @@ const PlatformHeader = ({ accountId, projectId }) => {
   const [loading, setLoading] = useState(true);
   const [projectData, setProjectData] = useState(null);
   const [projectsData, setProjectsData] = useState(null);
+  const [showAlert, setShowAlert] = useState(false)
+  const [alertMessage, setAlertMessage] = useState('')
   // const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const containerRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  if (!userProfile){
-    navigate("/login")
-  }
+  useEffect(() => {
+    console.log("Seeing if we need to navigate...")
+    console.log(userProfile)
+    if (!isLoading && !userProfile){
+      setAlertMessage("Login failure. Redirecting to login page...")
+      setShowAlert(true)
+      const redirectTimer = setTimeout(() => {
+        navigate("/login")
+      }, 3000)
+      return () => clearTimeout(redirectTimer)
+    } else {
+      setShowAlert(false)
+    }
+
+  }, [userProfile, isLoading, navigate])
   /*
   useEffect(() => {
     const getUserProfile = async () => {
@@ -83,6 +97,12 @@ const PlatformHeader = ({ accountId, projectId }) => {
         className="fixed top-0 left-0 z-50 w-full h-16 flex items-center justify-between px-6 bg-white border-b shadow"
         role="banner"
       >
+        {/* Alert message */}
+        {showAlert && (
+          <div className="absolute top-16 left-0 w-full bg-yellow-100 text-yellow-800 px-4 py-3 text-center">
+            {alertMessage}
+          </div>
+        )}
         {/* Branding */}
         <div className="flex items-center space-x-4">
           <Link
