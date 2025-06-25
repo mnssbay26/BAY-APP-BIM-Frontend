@@ -1,20 +1,25 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaUser } from "react-icons/fa";
-
+import { useUserProfile } from "../../../hooks/useUserProfile";
 const BACKEND_BASE_URL = import.meta.env.VITE_API_BACKEND_BASE_URL;
 
 const PlatformHeader = ({ accountId, projectId }) => {
-  const [userProfile, setUserProfile] = useState(null);
+  const { userProfile, isLoading, error } = useUserProfile()
+  // const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [projectData, setProjectData] = useState(null);
   const [projectsData, setProjectsData] = useState(null);
-  const [error, setError] = useState(null);
+  // const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const containerRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
+  if (!userProfile){
+    navigate("/login")
+  }
+  /*
   useEffect(() => {
     const getUserProfile = async () => {
       try {
@@ -41,6 +46,7 @@ const PlatformHeader = ({ accountId, projectId }) => {
     };
     getUserProfile();
   }, []);
+  */
 
   useEffect(() => {
     const handleClickOutside = (e) => {
