@@ -1,7 +1,8 @@
 ## Running Locally
 1) ensure .env updated
-2) Run backend locally as well
-3) execute `npm run dev`
+2) execute `npm install` to install dependencies
+3) Run backend locally as well
+4) execute `npm run dev`
 
 ## Testing
 
