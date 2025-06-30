@@ -9,9 +9,12 @@ async function sleep(seconds) {
 
 test.describe('Platform Page Navigation', () => {
     test.beforeEach(async ({ page }) => {
+        /**
+         * Use this to get console.logs in browser to show in testing terminal
         page.on('console', msg => {
             console.log(`[Browser Console] ${msg.type()}: ${msg.text()}`);
         });
+        */
         await mockUserProfileAPI(page)
         // Ensure user is logged in before accessing platform page
         await loginUser(page);
