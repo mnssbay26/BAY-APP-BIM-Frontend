@@ -19,8 +19,6 @@ const PlatformHeader = ({ accountId, projectId }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
-    console.log("Seeing if we need to navigate...")
-    console.log(userProfile)
     if (!isLoading && !userProfile){
       setAlertMessage("Login failure. Redirecting to login page...")
       setShowAlert(true)
