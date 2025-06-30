@@ -1,8 +1,13 @@
 // tests/fixtures/auth.fixture.js
 import { test as base } from '@playwright/test';
 
-async function sleep(seconds){
-    const mstime = seconds*1000
+import dotenv from "dotenv"
+dotenv.config()
+
+const BACKEND_URL = process.env.VITE_API_BACKEND_BASE_URL
+
+async function sleep(seconds) {
+    const mstime = seconds * 1000
     return new Promise(resolve => setTimeout(resolve, mstime))
 }
 /**
@@ -18,11 +23,11 @@ export async function loginUser(page, { tokenName = 'token', tokenValue = 'mock-
     await page.goto('/');
     // Set authentication cookie
     await page.context().addCookies([
-      {
-        name: tokenName,
-        value: tokenValue,
-        url: page.url(),
-      }
+        {
+            name: tokenName,
+            value: tokenValue,
+            url: page.url(),
+        }
     ]);
 
     // Refresh to apply the authentication state
@@ -95,12 +100,17 @@ export async function isLoggedIn(page) {
  * @param {import('@playwright/test').Page} page - Playwright page object
  * @param {Object} userData - User data to return
  */
-export async function mockUserProfileAPI(page, userData = { email: 'fakeemail@bayer.com' }) {
-  await page.route('**/general/user/profile', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(userData)
+export async function mockUserProfileAPI(page, userData) {
+    const fakeData = { data: { user: { emailId: "fakeemail@bayer.com" } } }
+    if (!userData){
+        userData = fakeData
+    }
+    const route_url = `${BACKEND_URL}/general/user/profile`
+    await page.route(route_url, async (route) => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify(userData)
+        });
     });
-  });
 }
