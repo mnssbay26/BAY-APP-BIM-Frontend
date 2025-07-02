@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test';
 import PlatformPage from '../../pages/general/Platform.page';
 import { loginUser, mockUserProfileAPI } from '../../fixtures/auth.fixture';
+import { mockBim360ProjectsData } from '../../fixtures/bim360.fixture';
+import { mockAccProjectsData } from '../../fixtures/acc.fixture';
+import { sleep } from '../../setup';
 
-async function sleep(seconds) {
-    const mstime = seconds * 1000
-    return new Promise(resolve => setTimeout(resolve, mstime))
-}
 
 test.describe('Platform Page Navigation', () => {
     test.beforeEach(async ({ page }) => {
@@ -63,6 +62,21 @@ test.describe('Platform Page Navigation', () => {
       const isErrorScreen = await platformPage.isErrorScreen()
       expect(isErrorScreen).toBeTruthy()
     });
+    test('on logged in, should navigate to BIM 360 projects when BIM 360 button is clicked and get expected page', async ({ page }) => {
+      await mockBim360ProjectsData(page)
+
+      const platformPage = new PlatformPage(page);
+      
+      await platformPage.navigate();
+      await platformPage.clickBim360Button();
+      
+      // Verify navigation to BIM 360 projects page
+      const currentUrl = await platformPage.getCurrentUrl();
+      expect(currentUrl).toContain('/bim360/projects');
+
+      const isErrorScreen = await platformPage.isErrorScreen()
+      expect(isErrorScreen).toBeFalsy()
+    });
   
     test('should navigate to ACC projects when ACC button is clicked', async ({ page }) => {
       const platformPage = new PlatformPage(page);
@@ -86,5 +100,20 @@ test.describe('Platform Page Navigation', () => {
 
       const isErrorScreen = await platformPage.isErrorScreen()
       expect(isErrorScreen).toBeTruthy()
+    });
+    test('on logged in, should navigate to ACC projects when ACC button is clicked and get expected page', async ({ page }) => {
+      await mockAccProjectsData(page)
+
+      const platformPage = new PlatformPage(page);
+      
+      await platformPage.navigate();
+      await platformPage.clickAccButton();
+      
+      // Verify navigation to ACC projects page
+      const currentUrl = await platformPage.getCurrentUrl();
+      expect(currentUrl).toContain('/acc/projects');
+
+      const isErrorScreen = await platformPage.isErrorScreen()
+      expect(isErrorScreen).toBeFalsy()
     });
 });
