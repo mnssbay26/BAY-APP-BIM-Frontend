@@ -23,7 +23,9 @@ class PlatformPage {
         // Additional selectors for PlatformHeader elements (assuming structure)
         this.platformLogo = page.locator('header img[alt*="Bayer"]');
         this.headerTitle = page.getByText('BAYER CROP SCIENCE BIM APP', { exact: false });
-        this.profileButton = page.locator('[data-testid="profile-button"]'); // Assuming there's a profile button
+
+        // for checking if error message displayed
+        this.errorSelector = 'div.text-red-600'; // Selector for the error message
     }
 
     /**
@@ -105,61 +107,13 @@ class PlatformPage {
         return this.page.url();
     }
 
-    /**
-     * Check if query parameters are preserved when navigating
-     * @param {string} queryParams - The query parameters to check (e.g., '?param=value')
-     * @param {string} destination - The destination to navigate to ('bim360' or 'acc')
-     * @returns {Promise<boolean>}
-     */
-    async checkQueryParamPreservation(queryParams, destination = 'bim360') {
-        // Navigate to platform page with query params
-        await this.page.goto(`/platform${queryParams}`);
-        await this.page.waitForLoadState('networkidle');
-
-        // Click the appropriate button
-        if (destination === 'bim360') {
-            await this.clickBim360Button();
-        } else {
-            await this.clickAccButton();
-        }
-
-        // Check if the current URL contains the query params
-        const currentUrl = await this.getCurrentUrl();
-        return currentUrl.includes(queryParams);
-    }
-
-    /**
-     * Mock the login state by setting cookies
-     * Useful for testing the platform page which requires authentication
-     * @param {string} token - The token value to set
-     * @returns {Promise<void>}
-     */
-    async mockLoggedInState(token = 'mock-token') {
-        // Navigate to the platform page first
-        await this.page.goto('/platform');
-
-        // Set the cookie
-        await this.page.context().addCookies([
-            {
-                name: 'token', // Make sure this matches what your app expects
-                value: token,
-                url: this.page.url(),
-            }
-        ]);
-
-        // Refresh the page to apply the cookie
-        await this.page.reload();
-        await this.page.waitForLoadState('networkidle');
-    }
-
-    /**
-     * Check if user is logged in based on UI elements
-     * @returns {Promise<boolean>}
-     */
-    async isUserLoggedIn() {
-        // This implementation depends on how your UI indicates logged-in state
-        // For example, if the profile button is only visible when logged in:
-        return await this.profileButton.isVisible();
+    // error screen if red text and 2 divs
+    async isErrorScreen() {
+        await this.page.waitForLoadState('domcontentloaded')
+        const divs = await this.page.$$('div')
+        const divCount = divs.length
+        const containsErrorText = await this.page.textContent(this.errorSelector) 
+        return containsErrorText && (divCount == 2)
     }
 }
 
