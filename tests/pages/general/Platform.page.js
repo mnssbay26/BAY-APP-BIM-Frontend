@@ -109,11 +109,15 @@ class PlatformPage {
 
     // error screen if red text and 2 divs
     async isErrorScreen() {
-        await this.page.waitForLoadState('domcontentloaded')
+        await this.page.waitForLoadState('domcontentloaded', {timeout: 1000})
         const divs = await this.page.$$('div')
         const divCount = divs.length
-        const containsErrorText = await this.page.textContent(this.errorSelector) 
-        return containsErrorText && (divCount == 2)
+        try{
+            const containsErrorText = await this.page.textContent(this.errorSelector, {timeout:1000}) 
+            return containsErrorText && (divCount == 2)
+        } catch (e){
+            return false
+        }
     }
 }
 
