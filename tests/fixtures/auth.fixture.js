@@ -1,15 +1,7 @@
 // tests/fixtures/auth.fixture.js
 import { test as base } from '@playwright/test';
+import { BACKEND_URL } from '../setup';
 
-import dotenv from "dotenv"
-dotenv.config()
-
-const BACKEND_URL = process.env.VITE_API_BACKEND_BASE_URL
-
-async function sleep(seconds) {
-    const mstime = seconds * 1000
-    return new Promise(resolve => setTimeout(resolve, mstime))
-}
 /**
  * Logs in a user by setting the necessary authentication cookies/storage
  * @param {import('@playwright/test').Page} page - Playwright page object
