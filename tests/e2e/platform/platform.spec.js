@@ -50,6 +50,19 @@ test.describe('Platform Page Navigation', () => {
       const currentUrl = await platformPage.getCurrentUrl();
       expect(currentUrl).toContain('/bim360/projects');
     });
+    test('on logged out, should navigate to BIM 360 projects when BIM 360 button is clicked and get error page', async ({ page }) => {
+      const platformPage = new PlatformPage(page);
+      
+      await platformPage.navigate();
+      await platformPage.clickBim360Button();
+      
+      // Verify navigation to BIM 360 projects page
+      const currentUrl = await platformPage.getCurrentUrl();
+      expect(currentUrl).toContain('/bim360/projects');
+
+      const isErrorScreen = await platformPage.isErrorScreen()
+      expect(isErrorScreen).toBeTruthy()
+    });
   
     test('should navigate to ACC projects when ACC button is clicked', async ({ page }) => {
       const platformPage = new PlatformPage(page);
@@ -60,5 +73,18 @@ test.describe('Platform Page Navigation', () => {
       // Verify navigation to ACC projects page
       const currentUrl = await platformPage.getCurrentUrl();
       expect(currentUrl).toContain('/acc/projects');
+    });
+    test('on logged out, should navigate to ACC projects when ACC button is clicked and get error page', async ({ page }) => {
+      const platformPage = new PlatformPage(page);
+      
+      await platformPage.navigate();
+      await platformPage.clickBim360Button();
+      
+      // Verify navigation to BIM 360 projects page
+      const currentUrl = await platformPage.getCurrentUrl();
+      expect(currentUrl).toContain('/bim360/projects');
+
+      const isErrorScreen = await platformPage.isErrorScreen()
+      expect(isErrorScreen).toBeTruthy()
     });
 });
