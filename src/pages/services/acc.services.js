@@ -2,173 +2,52 @@ const backendUrl = import.meta.env.VITE_API_BACKEND_BASE_URL;
 
 import { toBase64 } from "../utils/base64.util";
 
-export const fetchAccProjectsData = async () => {
+async function fetchAcc(url, fetchLabel) {
   try {
-    const response = await fetch(`${backendUrl}/acc/projects`, {
+    const response = await fetch(url, {
       method: "GET",
       credentials: "include",
     });
 
     if (!response.ok) {
-      throw new Error("Failed to fetch ACC projects");
+      throw new Error(`Failed to fetch ACC ${fetchLabel}`);
     }
 
     const { data } = await response.json();
-    //console.debug("Fetched ACC projects:", data.projects);
+    console.debug(`Fetched ACC ${fetchLabel}:`, data);
 
     return data;
   } catch (error) {
-    console.error("Error fetching ACC projects:", error);
+    console.error(`Error fetching ACC ${fetchLabel}:`, error);
     throw error;
   }
+}
+
+export const fetchAccProjectsData = async () => {
+  return await fetchAcc(`${backendUrl}/acc/projects`, "projects");
 };
 
 export const fetchAccProjectData = async (projectId, accountId) => {
-  try {
-    const response = await fetch(
-      `${backendUrl}/acc/projects/${accountId}/${projectId}`,
-      {
-        method: "GET",
-        credentials: "include",
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch ACC project data");
-    }
-
-    const { data } = await response.json();
-
-    console.log("Fetched ACC project data:", data);
-
-    return data;
-  } catch (error) {
-    console.error("Error fetching ACC project data:", error);
-    throw error;
-  }
+  return await fetchAcc(`${backendUrl}/acc/projects/${accountId}/${projectId}`, "project data");
 };
 
 export const fetchAccFederatedModel = async (projectId, accountId) => {
-  try {
-    const response = await fetch(
-      `${backendUrl}/datamanagement/${accountId}/${projectId}/federated-model`,
-      {
-        method: "GET",
-        credentials: "include",
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch ACC federated model");
-    }
-
-    const { data } = await response.json();
-
-    //console.debug("Fetched ACC federated model:", data);
-
-    return data.federatedmodel ? await toBase64(data.federatedmodel) : null;
-  } catch (error) {
-    console.error("Error fetching ACC federated model:", error);
-    throw error;
-  }
+  const data = await fetchAcc(`${backendUrl}/datamanagement/${accountId}/${projectId}/federated-model`, "federated model");
+  return data.federatedmodel ? await toBase64(data.federatedmodel) : null;
 };
 
 export const fetchAccProjectUsers = async (projectId, accountId) => {
-  try {
-    const response = await fetch(
-      `${backendUrl}/acc/projects/${accountId}/${projectId}/users`,
-      {
-        method: "GET",
-        credentials: "include",
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch ACC project users");
-    }
-
-    const { data } = await response.json();
-
-    //console.debug("Fetched ACC project users:", data);
-
-    return data;
-  } catch (error) {
-    console.error("Error fetching ACC project users:", error);
-    throw error;
-  }
+  return await fetchAcc(`${backendUrl}/acc/projects/${accountId}/${projectId}/users`, "project users");
 };
 
 export const fetchAccProjectIssues = async (projectId, accountId) => {
-  try {
-    const response = await fetch(
-      `${backendUrl}/acc/projects/${accountId}/${projectId}/issues`,
-      {
-        method: "GET",
-        credentials: "include",
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch ACC project issues");
-    }
-
-    const { data } = await response.json();
-
-    //console.debug("Fetched ACC project issues:", data);
-
-    return data;
-  } catch (error) {
-    console.error("Error fetching ACC project issues:", error);
-    throw error;
-  }
+  return await fetchAcc(`${backendUrl}/acc/projects/${accountId}/${projectId}/issues`, "project issues");
 };
 
 export const fetchAccProjectRfis = async (projectId, accountId) => {
-  try {
-    const response = await fetch(
-      `${backendUrl}/acc/projects/${accountId}/${projectId}/rfis`,
-      {
-        method: "GET",
-        credentials: "include",
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch ACC project RFIs");
-    }
-
-    const { data } = await response.json();
-
-    //console.debug("Fetched ACC project RFIs:", data);
-
-    return data;
-  } catch (error) {
-    console.error("Error fetching ACC project RFIs:", error);
-    throw error;
-  }
+  return await fetchAcc(`${backendUrl}/acc/projects/${accountId}/${projectId}/rfis`, "project RFIs");
 };
 
 export const fetchAccProjectSubmittals = async (projectId, accountId) => {
-  try {
-    const response = await fetch(
-      `${backendUrl}/acc/projects/${accountId}/${projectId}/submittals`,
-      {
-        method: "GET",
-        credentials: "include",
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch ACC project submittals");
-    }
-
-    const { data } = await response.json();
-
-    //console.log("Fetched ACC project submittals:", data);
-
-    return data;
-  } catch (error) {
-    console.error("Error fetching ACC project submittals:", error);
-    throw error;
-  }
+  return await fetchAcc(`${backendUrl}/acc/projects/${accountId}/${projectId}/submittals`, "project submittals");
 };
