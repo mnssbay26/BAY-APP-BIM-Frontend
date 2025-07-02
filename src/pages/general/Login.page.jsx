@@ -1,8 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCookies } from 'react-cookie';
+import { useUserProfile } from '@/hooks/useUserProfile.js';
 
 import BayerHeader from '../../components/general/general.pages.header.jsx';
+import PlatformHeader from '@/components/platform_general_components/general_platform_components/platform.access.header.jsx';
 
 /**
  * Login page component for Autodesk authentication.
@@ -11,6 +13,7 @@ import BayerHeader from '../../components/general/general.pages.header.jsx';
  */
 const LoginPage = () => {
   const [cookies] = useCookies(['access_token']);
+  const { userProfile } = useUserProfile()
   const navigate = useNavigate();
 
   const CLIENT_ID = import.meta.env.VITE_API_CLIENT_ID;
@@ -53,7 +56,7 @@ const LoginPage = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-      <BayerHeader />
+      {userProfile ? <PlatformHeader /> : <BayerHeader />}
 
       <main className="container mx-auto flex flex-col md:flex-row items-center justify-between px-6 py-20 gap-10 mt-16">
         {/* Title Section */}
