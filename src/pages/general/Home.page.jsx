@@ -1,18 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUserProfile } from '@/hooks/useUserProfile.js';
 
 import BayerHeader from '../../components/general/general.pages.header.jsx';
-
+import PlatformHeader from '@/components/platform_general_components/general_platform_components/platform.access.header.jsx';
 /**
  * Home page component with app introduction and navigation to login.
  * @returns {JSX.Element}
  */
 const HomePage = () => {
   const navigate = useNavigate();
+  const { userProfile } = useUserProfile()
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-      <BayerHeader />
+      {userProfile ? <PlatformHeader /> : <BayerHeader />}
 
       <main className="container mx-auto flex flex-col md:flex-row items-center justify-between px-6 py-20 gap-10 mt-16">
         {/* Title Section */}
