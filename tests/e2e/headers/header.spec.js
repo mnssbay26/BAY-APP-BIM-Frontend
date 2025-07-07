@@ -60,12 +60,10 @@ test.describe("platform.access.header.jsx display", () => {
         const iconExists = await icon.count() === 1 
         expect(iconExists).toBeTruthy()
     })
-
     test("username as email exists", async({page}) => {
-        await page.goto("/platform")
+        await page.goto("/platform", {waitUntil:"networkidle"})
         const header = page.locator("header")
-        expect(header).toContainText("@bayer.com", {useInnerText:true})
-
+        await expect(header).toContainText("@bayer.com", {useInnerText:true})
     })
 })
 test.describe("platform.access.header.jsx profile button press", () => {
