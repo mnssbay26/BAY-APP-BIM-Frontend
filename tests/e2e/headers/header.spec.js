@@ -108,10 +108,10 @@ test.describe("platform.access.header.jsx profile button press", () => {
         await expect(selectPlatformBtn).toBeVisible()
         await selectPlatformBtn.click()
 
-        expect(page).toHaveURL("/login")
+        await expect(page).toHaveURL("/login")
     }) 
     test ("Nav to / from profile svg click > Logout", async({page}) => {
-        await page.goto("/")
+        await page.goto("/platform")
         const icon = page.locator(`button:has(svg)`)
         await icon.click()
 
@@ -119,7 +119,7 @@ test.describe("platform.access.header.jsx profile button press", () => {
         await expect(selectPlatformBtn).toBeVisible()
         await selectPlatformBtn.click()
 
-        expect(page).toHaveURL("/")
+        await expect(page).toHaveURL("/")
     }) 
 })
 test.describe("header navigation in platform.access.header.jsx (not from profile svg)", () => {
