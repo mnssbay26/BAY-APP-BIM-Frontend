@@ -75,22 +75,54 @@ test.describe("platform.access.header.jsx profile button press", () => {
         await page.goto("/platform")
 
         const selectPlatformBtn = page.locator("button", {hasText: "Select Platform"})
-        expect(selectPlatformBtn).toBeHidden()
+        await expect(selectPlatformBtn).toBeHidden()
         const signinPageBtn = page.locator("button", {hasText: "Signin Page"})
-        expect(signinPageBtn).toBeHidden()
+        await expect(signinPageBtn).toBeHidden()
         const logoutBtn = page.locator("button", {hasText: "Logout"})
-        expect(logoutBtn).toBeHidden()
+        await expect(logoutBtn).toBeHidden()
 
         const icon = page.locator(`button:has(svg)`)
         await icon.click()
 
-        expect(selectPlatformBtn).toBeVisible()
-        expect(signinPageBtn).toBeVisible()
-        expect(logoutBtn).toBeVisible()
+        await expect(selectPlatformBtn).toBeVisible()
+        await expect(signinPageBtn).toBeVisible()
+        await expect(logoutBtn).toBeVisible()
     })
-    
+    test ("Nav to /platform from profile svg click > Select Platform ", async({page}) => {
+        await page.goto("/")
+        const icon = page.locator(`button:has(svg)`)
+        await icon.click()
+
+        const selectPlatformBtn = page.locator("button", {hasText: "Select Platform"})
+        await expect(selectPlatformBtn).toBeVisible()
+        await selectPlatformBtn.click()
+
+        expect(page).toHaveURL("/platform")
+    }) 
+    test ("Nav to /login from profile svg click > Signin Page", async({page}) => {
+        await page.goto("/")
+        const icon = page.locator(`button:has(svg)`)
+        await icon.click()
+
+        const selectPlatformBtn = page.locator("button", {hasText: "Signin Page"})
+        await expect(selectPlatformBtn).toBeVisible()
+        await selectPlatformBtn.click()
+
+        expect(page).toHaveURL("/login")
+    }) 
+    test ("Nav to / from profile svg click > Logout", async({page}) => {
+        await page.goto("/")
+        const icon = page.locator(`button:has(svg)`)
+        await icon.click()
+
+        const selectPlatformBtn = page.locator("button", {hasText: "Logout"})
+        await expect(selectPlatformBtn).toBeVisible()
+        await selectPlatformBtn.click()
+
+        expect(page).toHaveURL("/")
+    }) 
 })
-test.describe("header navigation in platform.access.header.jsx", () => {
+test.describe("header navigation in platform.access.header.jsx (not from profile svg)", () => {
     test.beforeEach(async({page}) => {
         await mockUserProfileAPI(page)
         await loginUser(page)
