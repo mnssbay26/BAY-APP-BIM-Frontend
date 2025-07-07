@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {loginUser, mockUserProfileAPI} from "../../fixtures/auth.fixture"
+import { sleep } from '../../setup';
 test.describe('Correct header based on login state and destination', () => {
     test("correct header (not logged in, /)", async ({page}) => {
         await page.goto("/")
@@ -48,7 +49,7 @@ test.describe("header navigation in general.pages.header.jsx", () => {
     })
 })
 
-test.describe("platform.access.header.jsx profile button press", () => {
+test.describe("platform.access.header.jsx display", () => {
     test.beforeEach(async({page}) => {
         await mockUserProfileAPI(page)
         await loginUser(page)
@@ -57,9 +58,21 @@ test.describe("platform.access.header.jsx profile button press", () => {
         await page.goto("/platform")
         const icon = page.locator(`button:has(svg)`)
         const iconCount = await icon.count()
-        console.log(iconCount)
         const iconExists = await icon.count() === 1 
         expect(iconExists).toBeTruthy()
+    })
+
+    test("username as email exists", async({page}) => {
+        await page.goto("/platform")
+        const header = page.locator("header")
+        expect(header).toContainText("@bayer.com", {useInnerText:true})
+
+    })
+})
+test.describe("platform.access.header.jsx profile button press", () => {
+    test.beforeEach(async({page}) => {
+        await mockUserProfileAPI(page)
+        await loginUser(page)
     })
     test("profile svg on click makes hidden options visible", async({page}) => {
         await page.goto("/platform")
