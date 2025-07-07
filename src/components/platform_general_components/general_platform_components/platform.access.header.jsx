@@ -86,7 +86,7 @@ const PlatformHeader = ({ accountId, projectId }) => {
   };
 
   const handleGoAuth = () => {
-    navigate("/Login");
+    navigate("login");
   };
 
   return (

@@ -106,7 +106,7 @@ const Bim360ProjectsHeader = ({ projectId, accountId }) => {
       };
     
       const handleGoAuth = () => {
-        navigate("/Login");
+        navigate("/login");
       };
     
       return (
