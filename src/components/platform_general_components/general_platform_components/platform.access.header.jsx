@@ -74,11 +74,15 @@ const PlatformHeader = ({ accountId, projectId }) => {
   }, []);
 
   const handleLogout = async () => {
-    await fetch(`${BACKEND_BASE_URL}/auth/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
-    window.location.href = "/";
+    try{
+      await fetch(`${BACKEND_BASE_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch(e){
+      console.log("Logout not yet implemented.")
+    }
+    navigate("/")
   };
 
   const handleGoPlatform = () => {
