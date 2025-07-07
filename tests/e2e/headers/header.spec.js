@@ -57,7 +57,6 @@ test.describe("platform.access.header.jsx display", () => {
     test("profile svg exists", async({page}) => {
         await page.goto("/platform")
         const icon = page.locator(`button:has(svg)`)
-        const iconCount = await icon.count()
         const iconExists = await icon.count() === 1 
         expect(iconExists).toBeTruthy()
     })
