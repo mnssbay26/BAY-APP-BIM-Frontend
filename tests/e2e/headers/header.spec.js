@@ -21,9 +21,9 @@ test.describe('Correct header based on login state and destination', () => {
 
     })
     test("correct header (is logged in, /login)", async ({page}) => {
-        await page.goto("/login")
         await mockUserProfileAPI(page)
         await loginUser(page)
+        await page.goto("/login")
         const header = page.locator('header')
         await expect(header).toContainText("@bayer.com", {useInnerText:true})
 
