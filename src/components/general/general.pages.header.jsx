@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 /**
  * Site header component displaying login or user info after authentication.
@@ -8,7 +8,6 @@ import { Link, useNavigate } from "react-router-dom";
  */
 export function BayerHeader() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
   const handleClickOutsite = (event) => {
