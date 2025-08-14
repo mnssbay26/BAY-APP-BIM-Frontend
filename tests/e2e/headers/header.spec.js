@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { test } from "../../fixtures/auth.fixture";
+import { test } from "../../fixtures/test.fixture";
 test.describe("Correct header based on login state and destination", () => {
     test("correct header (not logged in, /)", async ({ page }) => {
         await page.goto("/");

@@ -1,5 +1,5 @@
-import { expect } from "../../fixtures/auth.fixture";
-import { test } from "../../fixtures/auth.fixture";
+import { expect } from "@playwright/test";
+import { test } from "../../fixtures/test.fixture";
 import PlatformPage from "../../pages/general/Platform.page";
 import { mockBim360ProjectsData } from "../../fixtures/bim360.fixture";
 import { mockAccProjectsData } from "../../fixtures/acc.fixture";
