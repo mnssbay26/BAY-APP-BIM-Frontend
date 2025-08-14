@@ -9,23 +9,45 @@ class PlatformPage {
         this.page = page;
 
         // Define selectors for key elements
-        this.pageContainer = page.locator('.min-h-screen');
-        this.header = page.locator('header'); // Assuming PlatformHeader renders a header element
+        this.pageContainer = page.locator(".min-h-screen");
+        this.header = page.locator("header"); // Assuming PlatformHeader renders a header element
 
         // Title and subtitle
-        this.title = page.locator('h1#platform-title');
-        this.subtitle = page.locator('h2.text-2xl');
+        this.title = page.locator("h1#platform-title");
+        this.subtitle = page.locator("h2.text-2xl");
 
         // Platform selection buttons - using aria-label for more reliable selection
-        this.bim360Button = page.getByRole('button', { name: 'Go to BIM 360 projects' });
-        this.accButton = page.getByRole('button', { name: 'Go to Autodesk Construction Cloud projects' });
+        this.bim360Button = page.getByRole("button", {
+            name: "Go to BIM 360 projects",
+        });
+        this.accButton = page.getByRole("button", {
+            name: "Go to Autodesk Construction Cloud projects",
+        });
 
         // Additional selectors for PlatformHeader elements (assuming structure)
         this.platformLogo = page.locator('header img[alt*="Bayer"]');
-        this.headerTitle = page.getByText('BAYER CROP SCIENCE BIM APP', { exact: false });
+        this.headerTitle = page.getByText("BAYER CROP SCIENCE BIM APP", {
+            exact: false,
+        });
 
         // for checking if error message displayed
-        this.errorSelector = 'div.text-red-600'; // Selector for the error message
+        this.errorSelector = "div.text-red-600"; // Selector for the error message
+    }
+
+    /**
+     * Gets current path from URL
+     * @returns pathname as string promise
+     */
+    async getCurrentPath() {
+        const url = new URL(this.page.url());
+        return url.pathname;
+    }
+
+    /**
+     * @returns {Promise<boolean>}
+     */
+    async isOnPlatformPage() {
+        return (await this.getCurrentPath()) === "/platform";
     }
 
     /**
@@ -33,8 +55,8 @@ class PlatformPage {
      * @returns {Promise<void>}
      */
     async navigate() {
-        await this.page.goto('/platform');
-        await this.page.waitForLoadState('networkidle');
+        await this.page.goto("/platform");
+        await this.page.waitForLoadState("networkidle");
     }
 
     /**
@@ -44,7 +66,7 @@ class PlatformPage {
     async clickBim360Button() {
         await this.bim360Button.click();
         // Wait for navigation to complete
-        await this.page.waitForURL('/bim360/projects**');
+        await this.page.waitForURL("/bim360/projects**");
     }
 
     /**
@@ -54,7 +76,7 @@ class PlatformPage {
     async clickAccButton() {
         await this.accButton.click();
         // Wait for navigation to complete
-        await this.page.waitForURL('/acc/projects**');
+        await this.page.waitForURL("/acc/projects**");
     }
 
     /**
@@ -78,8 +100,13 @@ class PlatformPage {
      * @returns {Promise<boolean>}
      */
     async isLoaded() {
-        await this.pageContainer.waitFor({ state: 'visible' });
-        await this.title.waitFor({ state: 'visible' });
+        await this.pageContainer.waitFor({ state: "visible" });
+
+        const onPlatform = await this.isOnPlatformPage();
+        if (!onPlatform) {
+            throw new Error("Navigated away from /platform");
+        }
+        await this.title.waitFor({ state: "visible" });
         return await this.pageContainer.isVisible();
     }
 
@@ -109,14 +136,17 @@ class PlatformPage {
 
     // error screen if red text and 2 divs
     async isErrorScreen() {
-        await this.page.waitForLoadState('domcontentloaded', {timeout: 1000})
-        const divs = await this.page.$$('div')
-        const divCount = divs.length
-        try{
-            const containsErrorText = await this.page.textContent(this.errorSelector, {timeout:1000}) 
-            return containsErrorText && (divCount == 2)
-        } catch (e){
-            return false
+        await this.page.waitForLoadState("domcontentloaded", { timeout: 1000 });
+        const divs = await this.page.$$("div");
+        const divCount = divs.length;
+        try {
+            const containsErrorText = await this.page.textContent(
+                this.errorSelector,
+                { timeout: 1000 }
+            );
+            return containsErrorText && divCount == 2;
+        } catch (e) {
+            return false;
         }
     }
 }
