@@ -1,7 +1,8 @@
 // tests/e2e/authentication/login.spec.js
-import { test } from "../../fixtures/test.fixture";
+import { test } from "tests/fixtures/test.fixture";
 import { expect } from "@playwright/test";
-import LoginPage from "../../pages/general/Login.page";
+
+import LoginPage from "tests/pages/general/Login.page";
 
 test.describe("Login Page - Logged Out", () => {
     test("should display login button when not logged in", async ({ page }) => {

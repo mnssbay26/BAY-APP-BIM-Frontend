@@ -1,11 +1,11 @@
-import { BACKEND_URL } from "../setup";
+import { Page } from "@playwright/test";
 
-/**
- * Mocks the user profile API response
- * @param {import('@playwright/test').Page} page - Playwright page object
- * @param {Object} userData - User data to return
- */
-export async function mockUserProfileAPI(page, userData) {
+import { BACKEND_URL } from "tests/setup";
+
+export async function mockUserProfileAPI(
+    page: Page,
+    userData?: { data: { user: { emailId: string } } }
+) {
     const fakeData = { data: { user: { emailId: "fakeemail@bayer.com" } } };
     if (!userData) {
         userData = fakeData;
@@ -20,16 +20,8 @@ export async function mockUserProfileAPI(page, userData) {
     });
 }
 
-/**
- * Logs in a user by setting the necessary authentication cookies/storage
- * @param {import('@playwright/test').Page} page - Playwright page object
- * @param {Object} options - Login options
- * @param {string} options.tokenName - The name of the auth token cookie (default: 'token')
- * @param {string} options.tokenValue - The value of the auth token (default: 'mock-autodesk-token')
- * @returns {Promise<void>}
- */
 export async function loginUser(
-    page,
+    page: Page,
     { tokenName = "token", tokenValue = "mock-autodesk-token" } = {}
 ) {
     // Navigate to a page in app first (required for setting cookies)

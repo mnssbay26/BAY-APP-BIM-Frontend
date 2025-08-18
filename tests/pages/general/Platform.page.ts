@@ -1,11 +1,22 @@
+import { Page, Locator } from "@playwright/test";
 /**
  * Page Object Model for the Platform selection page
  */
 class PlatformPage {
+    private page: Page;
+    private pageContainer: Locator;
+    private header: Locator;
+    private title: Locator;
+    private subtitle: Locator;
+    private bim360Button: Locator;
+    private accButton: Locator;
+    private platformLogo: Locator;
+    private headerTitle: Locator;
+    private errorSelector: string;
     /**
      * @param {import('@playwright/test').Page} page - Playwright page object
      */
-    constructor(page) {
+    constructor(page: Page) {
         this.page = page;
 
         // Define selectors for key elements

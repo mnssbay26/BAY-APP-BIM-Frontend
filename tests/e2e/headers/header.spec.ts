@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { test } from "../../fixtures/test.fixture";
+import { test } from "tests/fixtures/test.fixture";
 test.describe("Correct header based on login state and destination", () => {
     test("correct header (not logged in, /)", async ({ page }) => {
         await page.goto("/");
@@ -89,7 +89,7 @@ test.describe("platform.access.header.jsx profile button press", () => {
         await expect(logoutBtn).toBeHidden();
 
         const icon = loggedInPage.locator(`button:has(svg)`);
-        await icon.click({ waitUntil: "networkidle" });
+        await icon.click();
 
         await expect(selectPlatformBtn).toBeVisible();
         await expect(signinPageBtn).toBeVisible();
@@ -141,6 +141,8 @@ test.describe("platform.access.header.jsx profile button press", () => {
         await selectPlatformBtn.click();
 
         await expect(loggedInPage).toHaveURL("/");
+        const loginBtn = loggedInPage.locator("button", { hasText: "Login" });
+        await expect(loginBtn).toBeVisible();
     });
 });
 test.describe("header navigation in platform.access.header.jsx (not from profile svg)", () => {

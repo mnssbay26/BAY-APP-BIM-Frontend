@@ -1,8 +1,8 @@
 import { expect } from "@playwright/test";
-import { test } from "../../fixtures/test.fixture";
-import PlatformPage from "../../pages/general/Platform.page";
-import { mockBim360ProjectsData } from "../../fixtures/bim360.fixture";
-import { mockAccProjectsData } from "../../fixtures/acc.fixture";
+import { test } from "tests/fixtures/test.fixture";
+import PlatformPage from "tests/pages/general/Platform.page";
+import { mockBim360ProjectsData } from "tests/fixtures/bim360.fixture";
+import { mockAccProjectsData } from "tests/fixtures/acc.fixture";
 
 test.describe("Platform Page Navigation (not logged in)", () => {
     test("should navigate away if user not logged in", async ({ page }) => {

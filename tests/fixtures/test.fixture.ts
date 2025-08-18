@@ -1,8 +1,12 @@
-import { test as base } from "@playwright/test";
+import { test as base, Page, TestFixture } from "@playwright/test";
 import { mockUserProfileAPI, loginUser } from "./auth.fixture";
 
+interface CustomFixtures {
+    loggedInPage: Page;
+}
+
 // extends playwright test
-export const test = base.extend({
+export const test = base.extend<CustomFixtures>({
     loggedInPage: async ({ page }, use) => {
         await mockUserProfileAPI(page);
 
