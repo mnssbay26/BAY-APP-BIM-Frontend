@@ -12,5 +12,5 @@
     },
     "types": ["@playwright/test"]
   },
-  "include": ["./**/*.ts", "../playwright.config.ts", "setup.js"]
+  "include": ["./**/*.ts", "../playwright.config.ts", "setup.ts"]
 }
