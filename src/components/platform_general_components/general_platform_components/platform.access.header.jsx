@@ -41,7 +41,7 @@ const PlatformHeader = ({ accountId, projectId }) => {
                 credentials: "include",
             });
         } catch (e) {
-            console.log("Logout not yet implemented.");
+            console.error("Error logging out: ", e.message);
         }
         navigate("/");
     };
