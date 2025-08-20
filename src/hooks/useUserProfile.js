@@ -36,7 +36,6 @@ const useUserProfile = (autoFetch = true) => {
             const emailId = data.data?.user?.emailId;
             setUserProfile(emailId);
             setIsLoading(false);
-            console.log("user logged in!");
             return emailId;
         } catch (error) {
             const errorMessage =
