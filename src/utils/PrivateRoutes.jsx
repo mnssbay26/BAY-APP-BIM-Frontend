@@ -1,9 +1,9 @@
 import { Outlet, Navigate } from "react-router-dom";
-import { useUserProfile } from "@/hooks/useUserProfile";
+import { useUserSession } from "@/hooks/useUserSession";
 import BayerLoadingOverlay from "@/components/general/general.pages.loading";
 
 export default function PrivateRoutes() {
-    const { userProfile, isLoading, error } = useUserProfile();
+    const { userProfile, isLoading, error } = useUserSession();
 
     // if something goes wrong, go to login
     if (error) {
