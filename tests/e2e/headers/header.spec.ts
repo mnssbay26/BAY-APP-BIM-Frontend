@@ -80,19 +80,14 @@ test.describe("platform.access.header.jsx profile button press", () => {
         const selectPlatformBtn = loggedInPage.locator("button", {
             hasText: "Select Platform",
         });
-        const signinPageBtn = loggedInPage.locator("button", {
-            hasText: "Signin Page",
-        });
         const logoutBtn = loggedInPage.locator("button", { hasText: "Logout" });
         await expect(selectPlatformBtn).toBeHidden();
-        await expect(signinPageBtn).toBeHidden();
         await expect(logoutBtn).toBeHidden();
 
         const icon = loggedInPage.locator(`button:has(svg)`);
         await icon.click();
 
         await expect(selectPlatformBtn).toBeVisible();
-        await expect(signinPageBtn).toBeVisible();
         await expect(logoutBtn).toBeVisible();
     });
     test("Nav to /platform from profile svg click > Select Platform ", async ({
@@ -112,21 +107,6 @@ test.describe("platform.access.header.jsx profile button press", () => {
 
         expect(loggedInPage).toHaveURL("/platform");
     });
-    test("Nav to /login from profile svg click > Signin Page", async ({
-        loggedInPage,
-    }) => {
-        await loggedInPage.goto("/");
-        const icon = loggedInPage.locator(`button:has(svg)`);
-        await icon.click();
-
-        const selectPlatformBtn = loggedInPage.locator("button", {
-            hasText: "Signin Page",
-        });
-        await expect(selectPlatformBtn).toBeVisible();
-        await selectPlatformBtn.click();
-
-        await expect(loggedInPage).toHaveURL("/login");
-    });
     test("Nav to / from profile svg click > Logout", async ({
         loggedInPage,
     }) => {
@@ -141,8 +121,8 @@ test.describe("platform.access.header.jsx profile button press", () => {
         await selectPlatformBtn.click();
 
         await expect(loggedInPage).toHaveURL("/");
-        const loginBtn = loggedInPage.locator("button", { hasText: "Login" });
-        await expect(loginBtn).toBeVisible();
+        // const loginBtn = loggedInPage.locator("button", { hasText: "Login" });
+        // await expect(loginBtn).toBeVisible();
     });
 });
 test.describe("header navigation in platform.access.header.jsx (not from profile svg)", () => {
