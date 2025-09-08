@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCookies } from "react-cookie";
-import { useUserProfile } from "@/hooks/useUserProfile.js";
-import { Alert } from "@/components/ui/alert.jsx";
+import { useUserSession } from "@/hooks/useUserSession";
 
-import BayerHeader from "../../components/general/general.pages.header.jsx";
-import PlatformHeader from "@/components/platform_general_components/general_platform_components/platform.access.header.jsx";
+import GeneralHeader from "@/components/headers/general-header.jsx";
+
+import sleep from "@/utils/sleep.js";
+import { initiateLogin } from "@/utils/initiateLogin";
 
 const PopUp = ({ children, onClose }) => {
     return (
@@ -49,47 +50,15 @@ const LoginPage = () => {
     const [loginFailed, setLoginFailed] = useState(null);
 
     const [cookies] = useCookies(["access_token"]);
-    const { userProfile } = useUserProfile();
     const navigate = useNavigate();
     const location = useLocation();
 
-    const CLIENT_ID = import.meta.env.VITE_API_CLIENT_ID;
     const BACKEND_BASE_URL = import.meta.env.VITE_API_BACKEND_BASE_URL;
-
-    /**
-     * Redirects user to Autodesk OAuth login page.
-     */
-    const login = async () => {
-        if (!CLIENT_ID) {
-            console.error("Missing VITE_API_CLIENT_ID environment variable");
-            return;
-        }
-
-        const params = new URLSearchParams({
-            response_type: "code",
-            client_id: CLIENT_ID,
-            redirect_uri: `${BACKEND_BASE_URL}/auth/three-legged`,
-            scope: "data:read data:write data:create account:read",
-        });
-
-        window.location.href = `https://developer.api.autodesk.com/authentication/v2/authorize?${params.toString()}`;
-    };
 
     /**
      * Logs out the user by calling backend and clearing cookies.
      */
-    const logout = async () => {
-        try {
-            await fetch(`${BACKEND_BASE_URL}/auth/logout`, {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-            });
-            navigate("/");
-        } catch (err) {
-            console.error("Logout failed:", err);
-        }
-    };
+    const logout = async () => {};
 
     const handlePopUpClose = () => {
         setLoginFailed(false);
@@ -111,7 +80,8 @@ const LoginPage = () => {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-            {userProfile ? <PlatformHeader /> : <BayerHeader />}
+            {/* userProfile ? <PlatformHeader /> : <BayerHeader /> */}
+            <GeneralHeader />
 
             <main className="container mx-auto flex flex-col md:flex-row items-center justify-between px-6 py-20 gap-10 mt-16">
                 {loginFailed ? (
@@ -152,7 +122,7 @@ const LoginPage = () => {
                         </>
                     ) : (
                         <button
-                            onClick={login}
+                            onClick={initiateLogin}
                             className="bg-[#10384F] text-white px-6 py-3 rounded-lg hover:bg-[#89D329] transition-colors w-48"
                             aria-label="Login with Autodesk"
                         >
