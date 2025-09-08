@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 const BACKEND_BASE_URL = import.meta.env.VITE_API_BACKEND_BASE_URL;
 
 /**
- * Custom hook for fetching and managing user profile data
+ * Custom hook for fetching user profile data
  * @param {boolean} autoFetch - Whether to fetch the profile automatically on mount
  * @returns {Object} User profile state and functions
  */
@@ -46,20 +46,16 @@ const useUserProfile = (autoFetch = true) => {
         }
     }, []);
 
-    // Automatically fetch profile when the hook is mounted if autoFetch is true
+    const clearUserProfile = useCallback(async () => {
+        setUserProfile(undefined);
+    }, []);
+
+    // Automatically refresh profile when the hook is mounted if autoFetch is true
     useEffect(() => {
-        getUserProfile();
-        /*
         if (autoFetch) {
             getUserProfile();
         }
-        */
     }, [autoFetch, getUserProfile]);
-
-    // Function to clear the profile (useful for logout)
-    const clearUserProfile = useCallback(() => {
-        setUserProfile(null);
-    }, []);
 
     return {
         userProfile,
