@@ -1,14 +1,15 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-import BayerHeader from "../../components/headers/general.pages.header.jsx";
+// import BayerHeader from "../../components/headers/general.pages.header.jsx";
+import GeneralHeader from "@/components/headers/general-header";
 
 const NotFoundPage = () => {
     const navigate = useNavigate();
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-            <BayerHeader />
+            <GeneralHeader />
             <main className="container mx-auto flex flex-col md:flex-row items-center justify-between px-6 py-20 gap-10 mt-16">
                 {/* Title Section */}
                 <div className="w-full md:w-1/2 text-center">
