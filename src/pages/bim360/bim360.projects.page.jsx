@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import BayerLoadingOverlay from "@/components/general/general.pages.loading.jsx";
-import PlatformHeader from "@/components/headers/platform.access.header.jsx";
+// import PlatformHeader from "@/components/headers/platform.access.header.jsx";
+import GeneralHeader from "@/components/headers/general-header.jsx";
 
 import { fetchBim360ProjectsData } from "../../pages/services/bim360.services.js";
 
@@ -47,7 +48,7 @@ const Bim360ProjectsPage = () => {
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-            <PlatformHeader />
+            <GeneralHeader />
 
             <main className="container mx-auto flex flex-col md:flex-row items-center px-6 py-20 gap-10">
                 {/* Left Column */}
