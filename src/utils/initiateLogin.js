@@ -1,6 +1,7 @@
 const initiateLogin = () => {
     const CLIENT_ID = import.meta.env.VITE_API_CLIENT_ID;
-    const BACKEND_BASE_URL = import.meta.env.BACKEND_BASE_URL;
+    const BACKEND_BASE_URL = import.meta.env.VITE_API_BACKEND_BASE_URL;
+
     if (!CLIENT_ID) {
         console.error("Missing VITE_API_CLIENT_ID environment variable");
         return;
