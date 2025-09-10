@@ -3,6 +3,7 @@ import { useUserSession } from "@/hooks/useUserSession";
 import NoPlatformHeaderLeft from "./left_headers/no-platform-header-left";
 import LoggedInHeaderRight from "./right_headers/logged-in-header-right";
 import LoggedOutHeaderRight from "./right_headers/logged-out-header-right";
+import PlatformHeaderLeft from "./left_headers/platform-header-left";
 
 export default function GeneralHeader() {
     const { userProfile } = useUserSession();
@@ -12,7 +13,7 @@ export default function GeneralHeader() {
             className="fixed top-0 left-0 z-50 w-full h-16 flex items-center justify-between px-6 bg-white border-b shadow"
             role="banner"
         >
-            <NoPlatformHeaderLeft />
+            {userProfile ? <NoPlatformHeaderLeft /> : <PlatformHeaderLeft />}
             {userProfile ? (
                 <LoggedInHeaderRight userProfile={userProfile} />
             ) : (
