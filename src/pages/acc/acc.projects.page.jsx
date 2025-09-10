@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { fetchAccProjectsData } from "../../pages/services/acc.services.js";
 
@@ -14,6 +14,7 @@ const AccProjectsPage = () => {
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(true);
@@ -21,9 +22,15 @@ const AccProjectsPage = () => {
     Promise.all([fetchAccProjectsData()])
       .then(([projectsData]) => {
         if (projectsData) {
-          const accProjects = projectsData.projects.filter(
-            (project) => project.attributes.extension.data.projectType === "ACC"
+          const accProjects = projectsData.filter(project => 
+            project.platform === "acc" && project.status === "active"
           );
+          
+          //console.log("All Projects Data:", projectsData);
+          //console.log("Filtered ACC Projects:", accProjects);
+          //console.log(`Filtered ${accProjects.length} ACC active projects from ${projectsData.length} total projects`);
+          //console.log("ACC Projects Data:", accProjects);
+
           setProjects(accProjects);
         }
       })
@@ -44,6 +51,13 @@ const AccProjectsPage = () => {
     return <div className="text-red-600">{error}</div>;
   }
 
+  const handleGeneralReport = () => {
+    navigate('/acc/general-report', { state: { projects } });
+  };
+
+  const withB = (id = "") =>
+  id.startsWith("b.") ? id : `b.${id.replace(/^[ab]\./, "")}`;
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white">
       <PlatformHeader />
@@ -53,8 +67,13 @@ const AccProjectsPage = () => {
         <div className="w-full md:w-1/2 space-y-4 text-center">
           <h1 className="text-5xl font-bold text-gray-900">BAYER BIM APP</h1>
           <p className="text-2xl text-gray-700">
-            Select your project to continue
+            Select your project to continue or review the general report
           </p>
+          <button 
+          onClick={handleGeneralReport}
+          className="mt-6 bg-[#10384f] text-white text-lg font-semibold px-8 py-3 rounded-md shadow-lg hover:bg-[#2ea3e3] transition-colors duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed">
+            General Report
+          </button>
           {error && (
             <p className="text-red-600 mt-4">
               Oops, something went wrong: {error}
@@ -73,19 +92,14 @@ const AccProjectsPage = () => {
                 >
                   <div className="flex-1">
                     <h2 className="text-base font-medium text-gray-900">
-                      {project.attributes.name}
+                      {project.name}
                     </h2>
-                    {project.attributes.description && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        {project.attributes.description}
-                      </p>
-                    )}
                   </div>
 
                   <Link
-                    to={`/acc/projects/${project.relationships.hub.data.id}/${project.id}`}
+                    to={`/acc/projects/${withB(project.accountId)}/${withB(project.id)}`}
                     className="ml-4 bg-[#2ea3e3] text-white text-sm font-semibold px-3 py-1 rounded-md shadow hover:bg-slate-200 hover:text-black transition-colors"
-                  >
+                    >
                     Open project
                   </Link>
                 </li>

@@ -6,6 +6,7 @@ import LoginPage from "./pages/general/Login.page";
 import PlatformPage from "./pages/general/Platform.page";
 
 import AccProjectsPage from "./pages/acc/acc.projects.page";
+import AccGeneralReportPage from "./pages/acc/acc.general.report.page.jsx";
 import AccProjectPage from "./pages/acc/acc.project.page.jsx";
 import AccProjectIssuesPage from "./pages/acc/acc.issues.page.jsx";
 import AccProjectUsersPage from "./pages/acc/acc.users.page";
@@ -15,7 +16,9 @@ import AccProjectFolderPermitsPage from "./pages/acc/acc.folder.permits.page.jsx
 import AccModelDatabasePage from "./pages/acc/acc.model.database.page.jsx";
 import AccDigitalTwin from "./pages/acc/acc.digital.twin.page";
 
+
 import Bim360ProjectsPage from "./pages/bim360/bim360.projects.page.jsx";
+import Bim360GeneralReportPage from "./pages/bim360/bim360.general.report.page.jsx";
 import Bim360ProjectPage from "./pages/bim360/bim360.project.page.jsx";
 import Bim360ProjectIssuesPage from "./pages/bim360/bim360.issues.page.jsx";
 import Bim360ProjectUsersPage from "./pages/bim360/bim360.users.page.jsx";
@@ -38,6 +41,7 @@ function App() {
 
           {/* ACC Pages */}
           <Route path="/acc/projects" element={<AccProjectsPage />} />
+          <Route path="/acc/general-report" element={<AccGeneralReportPage />} />
           <Route
             path="/acc/projects/:accountId/:projectId"
             element={<AccProjectPage />}
@@ -73,6 +77,7 @@ function App() {
 
           {/* BIM 360 */}
           <Route path="/bim360/projects/" element={<Bim360ProjectsPage />} />
+          <Route path="/bim360/general-report" element={<Bim360GeneralReportPage />} />
           <Route
             path="/bim360/projects/:accountId/:projectId"
             element={<Bim360ProjectPage />}
