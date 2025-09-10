@@ -1,8 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import BayerHeader from "../../components/headers/general.pages.header.jsx";
-// import PlatformHeader from "@/components/headers/platform.access.header.jsx";
 import GeneralHeader from "@/components/headers/general-header.jsx";
 /**
  * Home page component with app introduction and navigation to login.
