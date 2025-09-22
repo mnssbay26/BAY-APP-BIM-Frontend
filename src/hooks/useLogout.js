@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { backendOnline } from "@/utils/backendOnline";
 const useLogout = () => {
-    const navigate = useNavigate();
     const [isLogoutLoading, setIsLogoutLoading] = useState(false);
 
     const logout = async (BACKEND_BASE_URL) => {
+        if (!BACKEND_BASE_URL) {
+            throw new Error("ERROR: ENV VARIABLE UNDEFINED");
+        }
         setIsLogoutLoading(true);
         try {
             await fetch(`${BACKEND_BASE_URL}/auth/logout`, {
@@ -14,14 +15,13 @@ const useLogout = () => {
                 headers: { "Content-Type": "application/json" },
             });
             setIsLogoutLoading(false);
-            navigate("/");
             return true;
         } catch (err) {
             // cannot be logged in if the backend isn't on, so mark as true
             if ((await backendOnline(BACKEND_BASE_URL)) === false) {
+                setIsLogoutLoading(false);
                 return true;
             }
-            console.error("Logout failed:", err);
             setIsLogoutLoading(false);
             return false;
         }
