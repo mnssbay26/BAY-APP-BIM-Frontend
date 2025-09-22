@@ -1,6 +1,6 @@
 import { Page } from "@playwright/test";
 
-import { BACKEND_URL } from "tests/setup";
+import { BACKEND_URL } from "../setup";
 
 export async function mockUserProfileAPI(
     page: Page,
@@ -20,6 +20,25 @@ export async function mockUserProfileAPI(
     });
 }
 
+export async function mockUserLogoutAPI(page: Page) {
+    const routeUrl = `${BACKEND_URL}/auth/logout`;
+    await page.route(routeUrl, async (route) => {
+        const loginUrl = `${BACKEND_URL}/general/user/profile`;
+
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ success: true }),
+        });
+
+        // after login run, set the login functionality to not work
+        await page.unroute(loginUrl);
+        await page.route(loginUrl, async (loginRoute) => {
+            await loginRoute.fulfill({ status: 401 });
+        });
+    });
+}
+
 export async function loginUser(
     page: Page,
     { tokenName = "token", tokenValue = "mock-autodesk-token" } = {}
@@ -34,7 +53,6 @@ export async function loginUser(
             url: page.url(),
         },
     ]);
-
     // Refresh to apply the authentication state
     await page.reload();
     await page.waitForLoadState("networkidle");
