@@ -1,9 +1,12 @@
 import { Outlet, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { useUserSession } from "@/hooks/useUserSession";
+import { selectUserProfile } from "@/store/slices/user/userSlice";
 import BayerLoadingOverlay from "@/components/general/general.pages.loading";
 
 export default function PrivateRoutes() {
-    const { userProfile, isLoading, error } = useUserSession();
+    const { isLoading, error } = useUserSession();
+    const userProfile = useSelector(selectUserProfile);
 
     // if something goes wrong, go to login
     if (error) {
@@ -11,7 +14,7 @@ export default function PrivateRoutes() {
     }
 
     // if loading, show it
-    if (isLoading || userProfile === undefined) {
+    if (isLoading) {
         return <BayerLoadingOverlay />;
     }
 
