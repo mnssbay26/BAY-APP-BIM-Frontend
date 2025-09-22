@@ -17,12 +17,16 @@ const PlatformPage = () => {
     /**
      * Navigate to BIM 360 projects list.
      */
-    const goToBim360 = () => navigate("/bim360/projects" + search);
+    const goToBim360 = () => {
+        navigate("/bim360/projects" + search);
+    };
 
     /**
      * Navigate to ACC projects list.
      */
-    const goToAcc = () => navigate("/acc/projects" + search);
+    const goToAcc = () => {
+        navigate("/acc/projects" + search);
+    };
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-white">

@@ -475,7 +475,6 @@ const Bim360ModelDatabasePage = () => {
         credentials: "include",
       });
 
-      console.log("Response:", response);
 
       if (response.ok) {
         const result = await response.json();
