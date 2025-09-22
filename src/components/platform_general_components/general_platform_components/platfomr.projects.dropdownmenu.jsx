@@ -1,44 +1,35 @@
+import { useHideOnOutsideClick } from "@/hooks/useHideOnOutsideClick";
 import React, { useState, useRef, useEffect } from "react";
 import { FaChevronDown, FaFolder } from "react-icons/fa";
 
 export const ProjectsDropdownMenu = ({
-  label,
-  options,
-  onSelect,
-  className = "",
+    label,
+    options,
+    onSelect,
+    className = "",
 }) => {
-  const [open, setOpen] = useState(false);
-  const dropdownRef = useRef(null);
+    const { containerRef } = useHideOnOutsideClick();
+    const [open, setOpen] = useState(false);
 
-  // Toggle open/close
-  const handleToggle = () => {
-    setOpen(!open);
-  };
+    // Toggle open/close
+    const handleToggle = () => {
+        setOpen(!open);
+    };
 
-  // Handle option selection
-  const handleOptionClick = (option) => {
-    onSelect(option);
-    setOpen(false);
-  };
-
-  // Close the dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+    // Handle option selection
+    const handleOptionClick = (option) => {
+        onSelect(option);
         setOpen(false);
-      }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
-  return (
-    <div className={`relative inline-block ${className} w-[600px]`} ref={dropdownRef}>
-      {/* Main button with arrow */}
-      <button
-        className="
+    return (
+        <div
+            className={`relative inline-block ${className} w-[600px]`}
+            ref={containerRef}
+        >
+            {/* Main button with arrow */}
+            <button
+                className="
           bg-gray-100
           text-black
           px-3
@@ -53,21 +44,22 @@ export const ProjectsDropdownMenu = ({
           text-xs
           w-[350px]
         "
-        onClick={handleToggle}
-      >
-        <span className="mr-4">{label}</span>
-        <FaChevronDown className="text-sm ml-auto" />
-      </button>
+                data-testid="platform-dropdown-button"
+                onClick={handleToggle}
+            >
+                <span className="mr-4">{label}</span>
+                <FaChevronDown className="text-sm ml-auto" />
+            </button>
 
-      {/* Options list */}
-      {open && (
-        <div className="absolute mt-2 bg-[#ffffff] text-white border border-gray-600 rounded-md shadow-lg min-w-[200px] z-50">
-          <ul className="flex flex-col text-black">
-            {options.map((option, index) => (
-              <li key={index}>
-                <button
-                  onClick={() => handleOptionClick(option)}
-                  className="
+            {/* Options list */}
+            {open && (
+                <div className="absolute mt-2 bg-[#ffffff] text-white border border-gray-600 rounded-md shadow-lg min-w-[200px] z-50">
+                    <ul className="flex flex-col text-black">
+                        {options.map((option, index) => (
+                            <li key={index}>
+                                <button
+                                    onClick={() => handleOptionClick(option)}
+                                    className="
                     flex
                     items-start
                     w-full
@@ -80,16 +72,16 @@ export const ProjectsDropdownMenu = ({
                     whitespace-normal
                     break-words
                   "
-                >
-                  {/* Folder icon with fixed size */}
-                  <FaFolder className="mr-2 w-4 h-4 flex-shrink-0" />
-                  {option.label}
-                </button>
-              </li>
-            ))}
-          </ul>
+                                >
+                                    {/* Folder icon with fixed size */}
+                                    <FaFolder className="mr-2 w-4 h-4 flex-shrink-0" />
+                                    {option.label}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 };
