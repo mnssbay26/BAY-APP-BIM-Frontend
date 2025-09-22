@@ -8,6 +8,7 @@ const useUserSession = () => {
     const handleLogout = async (BACKEND_BASE_URL) => {
         await logout(BACKEND_BASE_URL);
         clearUserProfile();
+        window.location.href = "/";
     };
 
     return {
