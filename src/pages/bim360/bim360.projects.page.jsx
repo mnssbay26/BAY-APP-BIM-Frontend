@@ -4,39 +4,16 @@ import { Link } from "react-router-dom";
 import BayerLoadingOverlay from "@/components/general/general.pages.loading.jsx";
 // import PlatformHeader from "@/components/headers/platform.access.header.jsx";
 import GeneralHeader from "@/components/headers/general-header.jsx";
+import useBimFetch from "@/hooks/useBimFetch";
 
-import { fetchBim360ProjectsData } from "../../pages/services/bim360.services.js";
+// import { fetchBim360ProjectsData } from "../../pages/services/bim360.services.js";
 
 /**
  * Page for listing BIM360 projects and allowing navigation to details.
  * @returns {JSX.Element}
  */
 const Bim360ProjectsPage = () => {
-    const [projects, setProjects] = useState([]);
-    const [error, setError] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        setLoading(true);
-        setError(null);
-        Promise.all([fetchBim360ProjectsData()])
-            .then(([projectsData]) => {
-                if (projectsData) {
-                    const bimProjects = projectsData.projects.filter(
-                        (project) =>
-                            project.attributes.extension.data.projectType ===
-                            "BIM360"
-                    );
-                    setProjects(bimProjects);
-                }
-            })
-            .catch((error) => {
-                setError(error.message);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, []);
+    const { projects, loading, error } = useBimFetch();
 
     if (loading) {
         return <BayerLoadingOverlay message="Loading project details..." />;
