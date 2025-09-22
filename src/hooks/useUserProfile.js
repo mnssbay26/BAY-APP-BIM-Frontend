@@ -2,13 +2,22 @@ import { useState, useEffect, useCallback } from "react";
 
 const BACKEND_BASE_URL = import.meta.env.VITE_API_BACKEND_BASE_URL;
 
+import { useDispatch, useSelector } from "react-redux";
+import {
+    selectUserProfile,
+    setLoggedIn,
+    setUserData,
+} from "@/store/slices/user/userSlice";
+
 /**
  * Custom hook for fetching user profile data
  * @param {boolean} autoFetch - Whether to fetch the profile automatically on mount
  * @returns {Object} User profile state and functions
  */
 const useUserProfile = (autoFetch = true) => {
-    const [userProfile, setUserProfile] = useState(undefined);
+    const dispatch = useDispatch();
+    const userProfile = useSelector(selectUserProfile);
+
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -33,10 +42,10 @@ const useUserProfile = (autoFetch = true) => {
             }
 
             const data = await response.json();
-            const emailId = data.data?.user?.emailId;
-            setUserProfile(emailId);
+            dispatch(setUserData(data));
             setIsLoading(false);
-            return emailId;
+            dispatch(setLoggedIn());
+            return true;
         } catch (error) {
             const errorMessage =
                 error?.response?.data?.message || "Error fetching user profile";
@@ -47,7 +56,7 @@ const useUserProfile = (autoFetch = true) => {
     }, []);
 
     const clearUserProfile = useCallback(async () => {
-        setUserProfile(undefined);
+        dispatch(setUserData(undefined));
     }, []);
 
     // Automatically refresh profile when the hook is mounted if autoFetch is true
