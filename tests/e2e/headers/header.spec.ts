@@ -114,15 +114,13 @@ test.describe("platform.access.header.jsx profile button press", () => {
         const icon = loggedInPage.locator(`button:has(svg)`);
         await icon.click();
 
-        const selectPlatformBtn = loggedInPage.locator("button", {
+        const selectLogoutButton = loggedInPage.locator("button", {
             hasText: "Logout",
         });
-        await expect(selectPlatformBtn).toBeVisible();
-        await selectPlatformBtn.click();
+        await expect(selectLogoutButton).toBeVisible();
+        await selectLogoutButton.click();
 
         await expect(loggedInPage).toHaveURL("/");
-        // const loginBtn = loggedInPage.locator("button", { hasText: "Login" });
-        // await expect(loginBtn).toBeVisible();
     });
 });
 test.describe("header navigation in platform.access.header.jsx (not from profile svg)", () => {
@@ -141,5 +139,63 @@ test.describe("header navigation in platform.access.header.jsx (not from profile
         const link = loggedInPage.locator("a", { hasText: "Home" });
         await link.click();
         expect(loggedInPage).toHaveURL("/");
+    });
+});
+
+test.describe("left header platform tests, logged out", () => {
+    test("shows blank header", async ({ page }) => {
+        await page.goto("/platform");
+        await page.waitForLoadState("networkidle");
+        const leftHeaderCount = await page
+            .getByTestId("no-platform-header-left")
+            .count();
+        expect(leftHeaderCount).toBe(1);
+    });
+});
+
+test.describe("left header platform tests, logged in, no platform", () => {
+    test("shows blank header", async ({ loggedInPage }) => {
+        await loggedInPage.goto("/platform");
+        await loggedInPage.waitForLoadState("networkidle");
+        const leftHeaderCount = await loggedInPage
+            .getByTestId("no-platform-header-left")
+            .count();
+        expect(leftHeaderCount).toBe(1);
+    });
+});
+
+test.describe("left header platform tests, logged in, platform", () => {
+    test("shows list of projects to choose from from clicking dropdown", async ({
+        loggedInPageBim360Platform,
+    }) => {
+        await loggedInPageBim360Platform.goto("/platform");
+        await loggedInPageBim360Platform.waitForLoadState("networkidle");
+        const dropdown = loggedInPageBim360Platform.getByTestId(
+            "platform-dropdown-button"
+        );
+        await dropdown.click();
+        const optionCount = await loggedInPageBim360Platform
+            .locator("ul", {
+                hasText: "Project",
+            })
+            .count();
+        expect(optionCount).toBeGreaterThan(0);
+    });
+
+    test("navigates to project page when clicking dropdown", async ({
+        loggedInPageBim360Platform,
+    }) => {
+        await loggedInPageBim360Platform.goto("/platform");
+        await loggedInPageBim360Platform.waitForLoadState("networkidle");
+        const dropdown = loggedInPageBim360Platform.getByTestId(
+            "platform-dropdown-button"
+        );
+        await dropdown.click();
+        const fakeProject1 = await loggedInPageBim360Platform
+            .locator("button", { hasText: "Fake Project 1" })
+            .click();
+
+        await loggedInPageBim360Platform.waitForLoadState("networkidle");
+        expect(loggedInPageBim360Platform.url()).toContain("/bim360/projects");
     });
 });
