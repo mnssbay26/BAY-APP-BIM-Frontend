@@ -10,7 +10,9 @@
     "paths": {
       "@/*": ["src/*"]
     },
-    "types": ["@playwright/test"]
+    "types": ["@playwright/test"],
+    "allowJs": true,
+    "checkJs": false,
   },
   "include": ["./**/*.ts", "../playwright.config.ts", "setup.ts"]
 }
