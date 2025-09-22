@@ -8,8 +8,8 @@ test.describe("Platform Page Navigation (not logged in)", () => {
     test("should navigate away if user not logged in", async ({ page }) => {
         const platformPage = new PlatformPage(page);
         await platformPage.navigate();
-        console.log(platformPage.getCurrentUrl());
-        // expect(await platformPage.navigate()).toThrowError(Error);
+        const currentUrl = await platformPage.getCurrentUrl();
+        expect(currentUrl).not.toContain("/platform");
     });
 });
 test.describe("Platform Page Navigation (logged in)", () => {
