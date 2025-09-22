@@ -4,11 +4,14 @@ import { useUserSession } from "@/hooks/useUserSession";
 import { useHideOnOutsideClick } from "@/hooks/useHideOnOutsideClick";
 
 export default function ProfileDropdown() {
-    const BACKEND_BASE_URL = import.meta.env.BACKEND_BASE_URL;
+    const BACKEND_BASE_URL = import.meta.env.VITE_API_BACKEND_BASE_URL;
+    if (!BACKEND_BASE_URL) {
+        throw new Error("Found the problem.");
+    }
     const navigate = useNavigate();
 
     const { handleLogout } = useUserSession();
-    const { ref, isVisible, show, hide, toggle } = useHideOnOutsideClick();
+    const { ref, isVisible, toggle } = useHideOnOutsideClick();
 
     const handleGoPlatform = () => {
         navigate("/platform");
