@@ -57,8 +57,16 @@ const sampleQuestions = [
   "Tell me the construction start and finish dates of elements in the discipline concrete structure",
 ];
 
+// --------- helpers front ----------
+const coerceUrn = (raw) => {
+  if (!raw) return "";
+  if (typeof raw === "string") return raw;
+  return raw.urn || raw.modelUrn || raw.derivativeUrn || "";
+};
+const stripB = (s) => (String(s).startsWith("b.") ? String(s).slice(2) : String(s));
+
 const Bim360ModelDatabasePage = () => {
-  //General
+  // General
   const { projectId, accountId } = useParams();
   const [cookies] = useCookies(["access_token"]);
   const [federatedModel, setFederatedModel] = useState(null);
@@ -66,7 +74,7 @@ const Bim360ModelDatabasePage = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  //Table and Viewer
+  // Table and Viewer
   const defaultRowData = useMemo(() => defaultRow, []);
   const propertyMapping = useMemo(() => propertyMappings["General"], []);
   const [data, setData] = useState([defaultRow]);
@@ -86,7 +94,7 @@ const Bim360ModelDatabasePage = () => {
   const [selectedColor, setSelectedColor] = useState("#ff0000");
   const [isPullMenuOpen, setIsPullMenuOpen] = useState(false);
 
-  //AI Panel
+  // AI Panel
   const [userMessage, setUserMessage] = useState("");
   const [chatbotResponse, setChatbotResponse] = useState("");
   const [conversationHistory, setConversationHistory] = useState(
@@ -99,19 +107,11 @@ const Bim360ModelDatabasePage = () => {
   }, [showViewer]);
 
   const tableWidthClass = useMemo(() => {
-    //Scenario 1 : No active Viewer, no active AI panel => table=w-full
     if (!showViewer && !showAIpanel) return "w-full";
-
-    //Scenario 2 : Active Viewer, no active AI panel => table=w-3/5
     if (showViewer && !showAIpanel) return "w-3/5";
-
-    //Scenario 3 : Active Viewer and AI panel => table=w-2/5
     if (showViewer && showAIpanel) return "w-2/5";
-
-    //Scenario 4 : No active Viewer, active AI panel => table=w-4/5
     if (!showViewer && showAIpanel) return "w-4/5";
-
-    return "w-full"; // fallback
+    return "w-full";
   }, [showViewer, showAIpanel]);
 
   const aiWidthClass = useMemo(() => {
@@ -139,19 +139,12 @@ const Bim360ModelDatabasePage = () => {
       fetchBim360ProjectData(projectId, accountId),
     ])
       .then(([federatedModelResp, projectDataResp]) => {
-        if (projectDataResp) {
-          setProjectData(projectDataResp);
-        }
-
-        if (federatedModelResp) {
-          setFederatedModel(federatedModelResp);
-        }
-
-        setLoading(false);
+        if (projectDataResp) setProjectData(projectDataResp);
+        if (federatedModelResp) setFederatedModel(federatedModelResp);
       })
       .catch((error) => {
         console.error("Error fetching federated model:", error);
-        setError(error);
+        setError(error?.message || String(error));
       })
       .finally(() => {
         setLoading(false);
@@ -196,10 +189,10 @@ const Bim360ModelDatabasePage = () => {
         let value = prop.displayValue;
 
         if (mappedKey && mappedKey.toLowerCase().includes("date")) {
-          if (value.toLowerCase() === "no especificado") {
+          if (String(value).toLowerCase() === "no especificado") {
             value = "";
           } else {
-            const parts = value.split("/");
+            const parts = String(value).split("/");
             if (parts.length === 3) {
               const [day, month, year] = parts;
               value = `20${year}-${month.padStart(2, "0")}-${day.padStart(
@@ -210,9 +203,7 @@ const Bim360ModelDatabasePage = () => {
           }
         }
 
-        if (mappedKey) {
-          acc[mappedKey] = value;
-        }
+        if (mappedKey) acc[mappedKey] = value;
         return acc;
       }, {});
 
@@ -345,21 +336,13 @@ const Bim360ModelDatabasePage = () => {
   };
 
   const dataRef = useRef(data);
-
   useEffect(() => {
     dataRef.current = data;
   }, [data]);
 
   const handleViewerSelectionChanged = useCallback((dbIdArray) => {
-    const currentDbIdsInTable = dataRef.current.map((row) => Number(row.dbId));
-
     const foundDbIds = dataRef.current
-      .filter((row) => {
-        const rowDbIdNum = Number(row.dbId);
-        const matched = dbIdArray.includes(rowDbIdNum);
-
-        return matched;
-      })
+      .filter((row) => dbIdArray.includes(Number(row.dbId)))
       .map((row) => row.dbId);
 
     setSelectedRows(foundDbIds.length ? foundDbIds : []);
@@ -370,10 +353,7 @@ const Bim360ModelDatabasePage = () => {
     if (!federatedModel || window.viewerInitialized) return;
 
     const conditionalSelectionHandler = (dbIdArray) => {
-      if (!syncViewerSelectionRef.current) {
-        return;
-      }
-
+      if (!syncViewerSelectionRef.current) return;
       handleViewerSelectionChanged(dbIdArray);
     };
 
@@ -399,7 +379,7 @@ const Bim360ModelDatabasePage = () => {
 
   const getCsrfToken = async () => {
     const resp = await fetch(`${backendUrl}/csrf-token`, {
-      credentials: "include", // Esto es importante si usas cookies
+      credentials: "include",
     });
     const data = await resp.json();
     return data.csrfToken;
@@ -408,6 +388,7 @@ const Bim360ModelDatabasePage = () => {
   const handleSubmit = async () => {
     try {
       const csrfToken = await getCsrfToken();
+
       // Clean numeric fields
       const cleanedData = data.map((row) => {
         const cleanedRow = { ...row };
@@ -422,20 +403,24 @@ const Bim360ModelDatabasePage = () => {
         return cleanedRow;
       });
 
+      const modelUrn = coerceUrn(federatedModel);
+      if (!modelUrn) throw new Error("Missing modelUrn");
+
       // Send all model data in one request
       const url = `${backendUrl}/modeldata/${accountId}/${projectId}/data`;
       const resp = await fetch(url, {
         method: "POST",
         credentials: "include",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "CSRF-Token": csrfToken,
-         },
+          Accept: "application/json",
+          "x-xsrf-token": csrfToken,
+        },
         body: JSON.stringify({
           accountId,
           projectId,
-          service: "model_data",
-          modelUrn: `${federatedModel}`,
+          service: "model-data",
+          modelUrn,
           items: cleanedData,
         }),
       });
@@ -445,9 +430,17 @@ const Bim360ModelDatabasePage = () => {
         throw new Error(`Error ${resp.status}: ${errorText}`);
       }
 
+      const ct = resp.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) {
+        const txt = await resp.text();
+        throw new Error(
+          `Unexpected response (${ct}). Snippet: ${txt.slice(0, 120)}`
+        );
+      }
+
       const result = await resp.json();
+      console.debug("Save result:", result);
       alert("¡Datos enviados correctamente!");
-      // Refresh table
       await handlePullData();
     } catch (error) {
       console.error("Error en handleSubmit:", error);
@@ -455,74 +448,105 @@ const Bim360ModelDatabasePage = () => {
     }
   };
 
-    const disciplineNameFix = (name) => {
-  if (!name) return "";
-  return name.replace(/_/g, " ").replace(/\s+/g, " ").trim();
-};
+  const disciplineNameFix = (name) => {
+    if (!name) return "";
+    return String(name).replace(/_/g, " ").replace(/\s+/g, " ").trim();
+  };
 
   const handlePullData = async (discipline = null) => {
-    try {
-      let url = `${backendUrl}/modeldata/${accountId}/${projectId}/data?modelUrn=${encodeURIComponent(
-        federatedModel
-      )}`;
-      if (discipline) {
-        url += `&discipline=${encodeURIComponent(discipline)}`;
-      }
-
-      const response = await fetch(url, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
-
-      console.log("Response:", response);
-
-      if (response.ok) {
-        const result = await response.json();
-        if (result.data && Array.isArray(result.data)) {
-          let tempRows = result.data.map((item) => {
-            const value = item || {};
-           return {
-              dbId: value.dbId || "",
-              Discipline: disciplineNameFix(value.Discipline) || "",
-              ElementType: disciplineNameFix(value.ElementType || ""),
-              TypeName: disciplineNameFix(value.TypeName || ""),
-              Description: disciplineNameFix(value.Description || ""),
-              TypeMark: disciplineNameFix(value.TypeMark || ""),
-              Length: value.Length ?? "",
-              Width: value.Width ?? "",
-              Height: value.Height ?? "",
-              Perimeter: value.Perimeter ?? "",
-              Area: value.Area ?? "",
-              Thickness: value.Thickness ?? "",
-              Volume: value.Volume ?? "",
-              Level: disciplineNameFix(value.Level || ""),
-              Material: disciplineNameFix(value.Material || ""),
-              Model: disciplineNameFix(value.Model || ""),
-              Manufacturer: disciplineNameFix(value.Manufacturer || ""),
-              EnergyConsumption: value.EnergyConsumption ?? "",
-              CarbonFootprint: value.CarbonFootprint ?? "",
-              WaterConsumption: value.WaterConsumption ?? "",
-              LifeCycleStage: value.LifeCycleStage || "",
-            };
-          });
-
-          tempRows = reorderRowsByDiscipline(tempRows);
-          setData(tempRows);
-          alert("Data successfully loaded");
-        } else {
-          alert("No data was found for this project.");
-        }
-      } else {
-        const errorData = await response.json();
-        console.error("Error fetching data:", errorData.message);
-        alert(`Error fetching data: ${errorData.message}`);
-      }
-    } catch (error) {
-      console.error("Request error:", error);
-      alert(`Request error: ${error.message}`);
+  try {
+    const modelUrn = coerceUrn(federatedModel);
+    if (!modelUrn) {
+      alert("Model URN not available yet.");
+      return;
     }
-  };
+
+    // Variantes de IDs (con y sin 'b.')
+    const accVars  = [accountId, stripB(accountId)];
+    const projVars = [projectId, stripB(projectId)];
+
+    // Armador de URL
+    const mkUrl = (acc, proj) => {
+      let u = `${backendUrl}/modeldata/${acc}/${proj}/data?modelUrn=${encodeURIComponent(modelUrn)}`;
+      if (discipline) u += `&discipline=${encodeURIComponent(discipline)}`;
+      return u;
+    };
+
+    // Intentamos hasta 4 combinaciones
+    let found = null;
+    let used = null;
+    for (const acc of accVars) {
+      for (const proj of projVars) {
+        const url = mkUrl(acc, proj);
+        console.log("[PullData] trying:", { acc, proj, url });
+        const resp = await fetch(url, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        });
+        console.log("[PullData] resp:", resp.status, resp.statusText);
+        if (!resp.ok) continue;
+
+        const result = await resp.json();
+        if (Array.isArray(result?.data) && result.data.length) {
+          found = result.data;
+          used = { acc, proj, url };
+          break;
+        }
+      }
+      if (found) break;
+    }
+
+    if (!found) {
+      console.warn("[PullData] No data with any PK combo.", {
+        tried: [
+          { acc: accVars[0], proj: projVars[0] },
+          { acc: accVars[0], proj: projVars[1] },
+          { acc: accVars[1], proj: projVars[0] },
+          { acc: accVars[1], proj: projVars[1] },
+        ],
+        urn: modelUrn,
+      });
+      alert("No data was found for this project.");
+      setData([defaultRow]);
+      return;
+    }
+
+    console.log("[PullData] USING combo:", used);
+
+    // Mapear filas
+    let tempRows = found.map((value = {}) => ({
+      dbId: value.dbId || "",
+      Discipline: disciplineNameFix(value.Discipline) || "",
+      ElementType: disciplineNameFix(value.ElementType || ""),
+      TypeName: disciplineNameFix(value.TypeName || ""),
+      Description: disciplineNameFix(value.Description || ""),
+      TypeMark: disciplineNameFix(value.TypeMark || ""),
+      Length: value.Length ?? "",
+      Width: value.Width ?? "",
+      Height: value.Height ?? "",
+      Perimeter: value.Perimeter ?? "",
+      Area: value.Area ?? "",
+      Thickness: value.Thickness ?? "",
+      Volume: value.Volume ?? "",
+      Level: disciplineNameFix(value.Level || ""),
+      Material: disciplineNameFix(value.Material || ""),
+      Model: disciplineNameFix(value.Model || ""),
+      Manufacturer: disciplineNameFix(value.Manufacturer || ""),
+      EnergyConsumption: value.EnergyConsumption ?? "",
+      CarbonFootprint: value.CarbonFootprint ?? "",
+      WaterConsumption: value.WaterConsumption ?? "",
+      LifeCycleStage: value.LifeCycleStage || "",
+    }));
+
+    tempRows = reorderRowsByDiscipline(tempRows);
+    setData(tempRows);
+    alert("Data successfully loaded");
+  } catch (error) {
+    console.error("Request error:", error);
+    alert(`Request error: ${error.message}`);
+  }
+};
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -540,7 +564,12 @@ const Bim360ModelDatabasePage = () => {
     if (!selectedDisciplineForColor || !selectedColor) return;
 
     try {
-      const url = `${backendUrl}/modeldata/${accountId}/${projectId}/data?modelUrn=${encodeURIComponent(federatedModel)}&discipline=${encodeURIComponent(selectedDisciplineForColor)}`;
+      const modelUrn = coerceUrn(federatedModel);
+      if (!modelUrn) return;
+
+      const url = `${backendUrl}/modeldata/${accountId}/${projectId}/data?modelUrn=${encodeURIComponent(
+        modelUrn
+      )}&discipline=${encodeURIComponent(selectedDisciplineForColor)}`;
       const response = await fetch(url, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
@@ -550,9 +579,8 @@ const Bim360ModelDatabasePage = () => {
 
       const result = await response.json();
       if (!result.data) return;
-      const dbIds = result.data.map((item) => parseInt(item.dbId, 10));
+      const dbIds = result.data.map((item) => parseInt(item.dbId, 10)).filter((n) => !isNaN(n));
 
-      // Solo enviamos dbIds y color al visor:
       if (
         window.databaseviewer &&
         typeof window.databaseviewer.applyColorByDiscipline === "function"
@@ -566,62 +594,46 @@ const Bim360ModelDatabasePage = () => {
     }
   };
 
-  const cleanprojectId = projectId.substring(2);
+  const cleanprojectId = useMemo(() => stripB(projectId), [projectId]);
 
-  const fetchAllData = async (projectId) => {
+  const fetchAllData = async (projectIdArg) => {
     let allData = [];
     let page = 1;
-    let limit = 250;
+    const limit = 250;
     let hasMoreData = true;
+
+    const modelUrn = coerceUrn(federatedModel);
+    if (!modelUrn) return [];
+
+    const base = `${backendUrl}/modeldata/${accountId}/${projectIdArg}/data?modelUrn=${encodeURIComponent(
+      modelUrn
+    )}`;
 
     try {
       while (hasMoreData) {
-        const response = await fetch(
-          `${backendUrl}/modeldata/${accountId}/${projectId}/data?page=${page}&limit=${limit}`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          }
-        );
+        const response = await fetch(`${base}&page=${page}&limit=${limit}`, {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          credentials: "include",
+        });
 
-        if (!response.ok) {
-          console.error(`Error GET: ${response.status} ${response.statusText}`);
-          throw new Error("Error fetching data");
-        }
+        if (!response.ok)
+          throw new Error(`GET ${response.status} ${response.statusText}`);
 
         const result = await response.json();
         const { data } = result;
+        if (!Array.isArray(data)) throw new Error("Wrong data format");
 
-        if (!Array.isArray(data)) {
-          console.error("Unexpected data format:", result);
-          throw new Error("Wrong data format");
-        }
-
-        allData = [...allData, ...data];
-        if (data.length < limit) {
-          hasMoreData = false;
-        } else {
-          page++;
-        }
+        allData = allData.concat(data);
+        hasMoreData = data.length === limit;
+        page++;
       }
       return allData;
-    } catch (error) {
-      console.error("Error fetching all data:", error);
+    } catch (err) {
+      console.error("Error fetching all data:", err);
       return [];
     }
   };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest(".relative")) {
-        setIsPullMenuOpen(false);
-      }
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, []);
 
   const handleSendMessage = async () => {
     setIsLoading(true);
@@ -703,7 +715,7 @@ const Bim360ModelDatabasePage = () => {
       } else if (isDateRangeCommand) {
         setChatbotResponse(data.reply);
       } else if (!isViewerCommand) {
-        if (data.reply.includes("ha sido actualizado")) {
+        if (data.reply?.includes?.("ha sido actualizado")) {
           setChatbotResponse(data.reply);
           setIsLoading(false);
 
@@ -715,7 +727,7 @@ const Bim360ModelDatabasePage = () => {
           }
           return;
         }
-        if (!data.reply.includes("No encontré elementos")) {
+        if (!data.reply?.includes?.("No encontré elementos")) {
           setChatbotResponse(data.reply);
           setIsLoading(false);
           return;

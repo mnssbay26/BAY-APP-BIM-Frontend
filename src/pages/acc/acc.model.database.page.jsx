@@ -58,7 +58,7 @@ const sampleQuestions = [
 ];
 
 const AccModelDatabasePage = () => {
-  //General
+  // General
   const { projectId, accountId } = useParams();
   const [cookies] = useCookies(["access_token"]);
   const [federatedModel, setFederatedModel] = useState(null);
@@ -66,7 +66,7 @@ const AccModelDatabasePage = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  //Table and Viewer
+  // Table & Viewer
   const defaultRowData = useMemo(() => defaultRow, []);
   const propertyMapping = useMemo(() => propertyMappings["General"], []);
   const [data, setData] = useState([defaultRow]);
@@ -86,7 +86,7 @@ const AccModelDatabasePage = () => {
   const [selectedColor, setSelectedColor] = useState("#ff0000");
   const [isPullMenuOpen, setIsPullMenuOpen] = useState(false);
 
-  //AI Panel
+  // AI Panel
   const [userMessage, setUserMessage] = useState("");
   const [chatbotResponse, setChatbotResponse] = useState("");
   const [conversationHistory, setConversationHistory] = useState(
@@ -99,24 +99,14 @@ const AccModelDatabasePage = () => {
   }, [showViewer]);
 
   const tableWidthClass = useMemo(() => {
-    //Scenario 1 : No active Viewer, no active AI panel => table=w-full
     if (!showViewer && !showAIpanel) return "w-full";
-
-    //Scenario 2 : Active Viewer, no active AI panel => table=w-3/5
     if (showViewer && !showAIpanel) return "w-3/5";
-
-    //Scenario 3 : Active Viewer and AI panel => table=w-2/5
     if (showViewer && showAIpanel) return "w-2/5";
-
-    //Scenario 4 : No active Viewer, active AI panel => table=w-4/5
     if (!showViewer && showAIpanel) return "w-4/5";
-
-    return "w-full"; // fallback
+    return "w-full";
   }, [showViewer, showAIpanel]);
 
-  const aiWidthClass = useMemo(() => {
-    return showAIpanel ? "w-1/5" : "w-0";
-  }, [showAIpanel]);
+  const aiWidthClass = useMemo(() => (showAIpanel ? "w-1/5" : "w-0"), [showAIpanel]);
 
   useEffect(() => {
     localStorage.setItem(
@@ -139,23 +129,15 @@ const AccModelDatabasePage = () => {
       fetchAccProjectData(projectId, accountId),
     ])
       .then(([federatedModelResp, projectDataResp]) => {
-        if (projectDataResp) {
-          setProjectData(projectDataResp);
-        }
-
-        if (federatedModelResp) {
-          setFederatedModel(federatedModelResp);
-        }
-
+        if (projectDataResp) setProjectData(projectDataResp);
+        if (federatedModelResp) setFederatedModel(federatedModelResp);
         setLoading(false);
       })
-      .catch((error) => {
-        console.error("Error fetching federated model:", error);
-        setError(error);
+      .catch((e) => {
+        console.error("Error fetching federated model:", e);
+        setError(e);
       })
-      .finally(() => {
-        setLoading(false);
-      });
+      .finally(() => setLoading(false));
   }, [projectId, accountId]);
 
   const fieldsToCheck = useMemo(
@@ -174,11 +156,56 @@ const AccModelDatabasePage = () => {
     []
   );
 
-  const updateRowNumbers = (rows) => {
-    return rows.map((row, idx) => ({ ...row, rowNumber: idx + 1 }));
-  };
+  const updateRowNumbers = (rows) =>
+    rows.map((row, idx) => ({ ...row, rowNumber: idx + 1 }));
 
+  // Robust extraction for ACC
   useEffect(() => {
+    const getFirst = (obj, ...keys) => {
+      for (const k of keys) {
+        const v = obj?.[k];
+        if (v != null) {
+          const s = String(v).trim();
+          if (s && s.toLowerCase() !== "no especificado") return s;
+        }
+      }
+      return "";
+    };
+
+    const guessElementType = (s) => {
+      if (!s) return null;
+      const t = s.toLowerCase();
+      if (t.includes("roof")) return "Roofs";
+      if (t.includes("railing")) return "Railings";
+      if (t.includes("stair")) return "Stairs";
+      if (t.includes("curtain")) return "Curtain Walls";
+      if (t.includes("window")) return "Windows";
+      if (t.includes("door")) return "Doors";
+      if (t.includes("wall")) return "Walls";
+      if (t.includes("floor") || t.includes("slab")) return "Floors";
+      if (t.includes("pipe")) return "Pipes";
+      if (t.includes("duct")) return "Ducts";
+      if (t.includes("generic")) return "Generic Models";
+      if (t.includes("column")) return "Structural Columns";
+      if (t.includes("foundation")) return "Structural Foundations";
+      return null;
+    };
+
+    const normalizeDate = (value) => {
+      const raw = String(value || "").trim();
+      if (!raw || raw.toLowerCase() === "no especificado") return "";
+      const parts = raw.split("/");
+      if (parts.length === 3) {
+        const [day, month, year] = parts;
+        return `20${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      }
+      return raw;
+    };
+
+    const lowerMapping = new Map(
+      Object.entries(propertyMapping).map(([k, v]) => [k.toLowerCase(), v])
+    );
+
     const handleDataExtracted = (event) => {
       const { dbId, properties } = event.detail;
       if (!properties || typeof properties !== "object") {
@@ -186,41 +213,69 @@ const AccModelDatabasePage = () => {
         return;
       }
 
-      const propertiesArray = Object.entries(properties).map(([k, v]) => ({
-        displayName: k,
-        displayValue: v || "",
-      }));
+      // 1) Base mapping (case-insensitive) + date normalization
+      const mappedProperties = Object.entries(properties).reduce(
+        (acc, [k, v]) => {
+          const keyLower = k.toLowerCase();
+          const mappedKey = lowerMapping.get(keyLower);
+          let value = v ?? "";
 
-      const mappedProperties = propertiesArray.reduce((acc, prop) => {
-        const mappedKey = propertyMapping[prop.displayName];
-        let value = prop.displayValue;
-
-        if (mappedKey && mappedKey.toLowerCase().includes("date")) {
-          if (value.toLowerCase() === "no especificado") {
-            value = "";
-          } else {
-            const parts = value.split("/");
-            if (parts.length === 3) {
-              const [day, month, year] = parts;
-              value = `20${year}-${month.padStart(2, "0")}-${day.padStart(
-                2,
-                "0"
-              )}`;
-            }
+          if (mappedKey && mappedKey.toLowerCase().includes("date")) {
+            value = normalizeDate(value);
           }
-        }
 
-        if (mappedKey) {
-          acc[mappedKey] = value;
-        }
-        return acc;
-      }, {});
+          if (mappedKey) acc[mappedKey] = String(value);
+          return acc;
+        },
+        {}
+      );
 
+      // 2) Fallbacks
+      if (!mappedProperties.TypeName) {
+        mappedProperties.TypeName = getFirst(
+          properties,
+          "TypeName",
+          "Type Name",
+          "Name",
+          "Element Name",
+          "Item Name"
+        );
+      }
+      if (!mappedProperties.Description) {
+        mappedProperties.Description = getFirst(
+          properties,
+          "Description",
+          "Long Description",
+          "Comments",
+          "Comment",
+          "Type Mark",
+          "Mark"
+        );
+      }
+
+      // 3) Ensure required fields exist
       fieldsToCheck.forEach((field) => {
-        if (!mappedProperties[field]) mappedProperties[field] = "";
+        if (!Object.prototype.hasOwnProperty.call(mappedProperties, field)) {
+          mappedProperties[field] = "";
+        }
       });
 
-      const elementType = mapCategoryToElementType(properties.Category) || "";
+      // 4) Robust ElementType (Category map -> heuristic)
+      const categoryHint = getFirst(
+        properties,
+        "Category",
+        "Family",
+        "Type",
+        "Category Name"
+      );
+      const elementType =
+        mapCategoryToElementType(categoryHint) ||
+        guessElementType(categoryHint) ||
+        guessElementType(
+          getFirst(properties, "Name", "Type Name", "TypeName", "Element Name")
+        ) ||
+        "";
+
       const newRow = {
         ...defaultRow,
         dbId,
@@ -288,12 +343,11 @@ const AccModelDatabasePage = () => {
 
     if (selectedRows.includes(row.dbId)) {
       setData((prev) =>
-        prev.map((item) => {
-          if (selectedRows.includes(item.dbId)) {
-            return { ...item, Discipline: newValue };
-          }
-          return item;
-        })
+        prev.map((item) =>
+          selectedRows.includes(item.dbId)
+            ? { ...item, Discipline: newValue }
+            : item
+        )
       );
     } else {
       const clone = [...data];
@@ -308,12 +362,11 @@ const AccModelDatabasePage = () => {
 
     if (selectedRows.includes(row.dbId)) {
       setData((prev) =>
-        prev.map((item) => {
-          if (selectedRows.includes(item.dbId)) {
-            return { ...item, ElementType: newValue };
-          }
-          return item;
-        })
+        prev.map((item) =>
+          selectedRows.includes(item.dbId)
+            ? { ...item, ElementType: newValue }
+            : item
+        )
       );
     } else {
       const clone = [...data];
@@ -330,12 +383,9 @@ const AccModelDatabasePage = () => {
     const currentRow = data[index];
     if (selectedRows.includes(currentRow.dbId)) {
       setData((prev) =>
-        prev.map((item) => {
-          if (selectedRows.includes(item.dbId)) {
-            return { ...item, [name]: value };
-          }
-          return item;
-        })
+        prev.map((item) =>
+          selectedRows.includes(item.dbId) ? { ...item, [name]: value } : item
+        )
       );
     } else {
       const newArr = [...data];
@@ -345,35 +395,25 @@ const AccModelDatabasePage = () => {
   };
 
   const dataRef = useRef(data);
-
   useEffect(() => {
     dataRef.current = data;
   }, [data]);
 
   const handleViewerSelectionChanged = useCallback((dbIdArray) => {
-    const currentDbIdsInTable = dataRef.current.map((row) => Number(row.dbId));
-
     const foundDbIds = dataRef.current
-      .filter((row) => {
-        const rowDbIdNum = Number(row.dbId);
-        const matched = dbIdArray.includes(rowDbIdNum);
-
-        return matched;
-      })
+      .filter((row) => dbIdArray.includes(Number(row.dbId)))
       .map((row) => row.dbId);
 
     setSelectedRows(foundDbIds.length ? foundDbIds : []);
     setSelectionCount(dbIdArray.length);
   }, []);
 
+  // Init viewer (use a page-specific guard to avoid cross-page interference)
   useEffect(() => {
-    if (!federatedModel || window.viewerInitialized) return;
+    if (!federatedModel || window.accViewerInitialized) return;
 
     const conditionalSelectionHandler = (dbIdArray) => {
-      if (!syncViewerSelectionRef.current) {
-        return;
-      }
-
+      if (!syncViewerSelectionRef.current) return;
       handleViewerSelectionChanged(dbIdArray);
     };
 
@@ -385,12 +425,11 @@ const AccModelDatabasePage = () => {
       setCategoryData,
     });
 
-    window.viewerInitialized = true;
+    window.accViewerInitialized = true;
   }, [federatedModel, handleViewerSelectionChanged]);
 
   useEffect(() => {
     syncViewerSelectionRef.current = syncViewerSelection;
-
     if (syncViewerSelection && window.databaseviewer) {
       const currentDbIds = window.databaseviewer.getSelection() || [];
       handleViewerSelectionChanged(currentDbIds);
@@ -398,16 +437,17 @@ const AccModelDatabasePage = () => {
   }, [syncViewerSelection, handleViewerSelectionChanged]);
 
   const getCsrfToken = async () => {
-  const resp = await fetch(`${backendUrl}/csrf-token`, {
-    credentials: "include", // Esto es importante si usas cookies
-  });
-  const data = await resp.json();
-  return data.csrfToken;
-};
+    const resp = await fetch(`${backendUrl}/csrf-token`, {
+      credentials: "include",
+    });
+    const data = await resp.json();
+    return data.csrfToken;
+  };
 
   const handleSubmit = async () => {
     try {
       const csrfToken = await getCsrfToken();
+
       // Clean numeric fields
       const cleanedData = data.map((row) => {
         const cleanedRow = { ...row };
@@ -422,19 +462,19 @@ const AccModelDatabasePage = () => {
         return cleanedRow;
       });
 
-      // Send all model data in one request
       const url = `${backendUrl}/modeldata/${accountId}/${projectId}/data`;
       const resp = await fetch(url, {
         method: "POST",
         credentials: "include",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "CSRF-Token": csrfToken,
+          Accept: "application/json",
+          "x-xsrf-token": csrfToken,
         },
         body: JSON.stringify({
           accountId,
           projectId,
-          service: "model_data",
+          service: "model-data",
           modelUrn: `${federatedModel}`,
           items: cleanedData,
         }),
@@ -445,27 +485,33 @@ const AccModelDatabasePage = () => {
         throw new Error(`Error ${resp.status}: ${errorText}`);
       }
 
+      const ct = resp.headers.get("content-type") || "";
+      if (!ct.includes("application/json")) {
+        const txt = await resp.text();
+        throw new Error(
+          `Unexpected response (${ct}). Snippet: ${txt.slice(0, 120)}`
+        );
+      }
+
       const result = await resp.json();
+      console.debug("Save result:", result);
       alert("¡Datos enviados correctamente!");
-      // Refresh table
       await handlePullData();
     } catch (error) {
       console.error("Error en handleSubmit:", error);
       alert(`Error al enviar datos: ${error.message}`);
     }
-  }
+  };
 
-  const disciplineNameFix = (name) => {
-  if (!name) return "";
-  return name.replace(/_/g, " ").replace(/\s+/g, " ").trim();
-};
+  const disciplineNameFix = (name) =>
+    !name ? "" : name.replace(/_/g, " ").replace(/\s+/g, " ").trim();
 
   const handlePullData = async (discipline = null) => {
     try {
-      let url = `${backendUrl}/modeldata/${accountId}/${projectId}/data?modelUrn=${encodeURIComponent(federatedModel)}`;
-      if (discipline) {
-        url += `&discipline=${encodeURIComponent(discipline)}`;
-      }
+      let url = `${backendUrl}/modeldata/${accountId}/${projectId}/data?modelUrn=${encodeURIComponent(
+        federatedModel
+      )}`;
+      if (discipline) url += `&discipline=${encodeURIComponent(discipline)}`;
 
       const response = await fetch(url, {
         method: "GET",
@@ -473,7 +519,6 @@ const AccModelDatabasePage = () => {
         credentials: "include",
       });
 
-      console.debug("Response:", response);
       console.debug("Response:", response);
 
       if (response.ok) {
@@ -525,21 +570,19 @@ const AccModelDatabasePage = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest(".relative")) {
-        setIsPullMenuOpen(false);
-      }
+      if (!event.target.closest(".relative")) setIsPullMenuOpen(false);
     };
     document.addEventListener("click", handleClickOutside);
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   const handleApplyColorToDiscipline = async () => {
     if (!selectedDisciplineForColor || !selectedColor) return;
 
     try {
-      const url = `${backendUrl}/modeldata/${accountId}/${projectId}/data?modelUrn=${encodeURIComponent(federatedModel)}&discipline=${encodeURIComponent(selectedDisciplineForColor)}`;
+      const url = `${backendUrl}/modeldata/${accountId}/${projectId}/data?modelUrn=${encodeURIComponent(
+        federatedModel
+      )}&discipline=${encodeURIComponent(selectedDisciplineForColor)}`;
       const response = await fetch(url, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
@@ -551,16 +594,12 @@ const AccModelDatabasePage = () => {
       if (!result.data) return;
       const dbIds = result.data.map((item) => parseInt(item.dbId, 10));
 
-      console.log("dbIds a pintar:", dbIds);
-
-      // Solo enviamos dbIds y color al visor:
       if (
         window.databaseviewer &&
         typeof window.databaseviewer.applyColorByDiscipline === "function"
       ) {
         window.databaseviewer.applyColorByDiscipline(dbIds, selectedColor);
       } else {
-        console.warn("applyColorByDiscipline not available in the viewer.");
         console.warn("applyColorByDiscipline not available in the viewer.");
       }
     } catch (error) {
@@ -571,60 +610,37 @@ const AccModelDatabasePage = () => {
   const cleanprojectId = projectId.substring(2);
 
   const fetchAllData = async (projectId) => {
-    let allData = [];
-    let page = 1;
-    let limit = 250;
-    let hasMoreData = true;
+  let allData = [];
+  let page = 1;
+  const limit = 250;
+  let hasMoreData = true;
 
-    try {
-      while (hasMoreData) {
-        const response = await fetch(
-          `${backendUrl}/modeldata/${accountId}/${projectId}/data?page=${page}&limit=${limit}`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          }
-        );
+  const base = `${backendUrl}/modeldata/${accountId}/${projectId}/data?modelUrn=${encodeURIComponent(federatedModel)}`;
 
-        if (!response.ok) {
-          console.error(`Error GET: ${response.status} ${response.statusText}`);
-          throw new Error("Error fetching data");
-        }
+  try {
+    while (hasMoreData) {
+      const response = await fetch(`${base}&page=${page}&limit=${limit}`, {
+        method: "GET",
+        headers: { "Accept": "application/json" },
+        credentials: "include", // <-- necesario si autenticas con cookie
+      });
 
-        const result = await response.json();
-        const { data } = result;
+      if (!response.ok) throw new Error(`GET ${response.status} ${response.statusText}`);
 
-        if (!Array.isArray(data)) {
-          console.error("Unexpected data format:", result);
-          throw new Error("Wrong data format");
-        }
+      const result = await response.json();
+      const { data } = result;
+      if (!Array.isArray(data)) throw new Error("Wrong data format");
 
-        allData = [...allData, ...data];
-        if (data.length < limit) {
-          hasMoreData = false;
-        } else {
-          page++;
-        }
-      }
-      return allData;
-    } catch (error) {
-      console.error("Error fetching all data:", error);
-      return [];
+      allData = allData.concat(data);
+      hasMoreData = data.length === limit;
+      page++;
     }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest(".relative")) {
-        setIsPullMenuOpen(false);
-      }
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, []);
-
+    return allData;
+  } catch (err) {
+    console.error("Error fetching all data:", err);
+    return [];
+  }
+};
   const handleSendMessage = async () => {
     setIsLoading(true);
     try {
@@ -635,7 +651,6 @@ const AccModelDatabasePage = () => {
       let isUpdateCommand = false;
       let isDateRangeCommand = false;
 
-      // Palabras clave para "update"
       const updateKeywords = [
         "change",
         "update",
@@ -690,39 +705,35 @@ const AccModelDatabasePage = () => {
         }),
       });
 
-      let data = await response.json();
+      let respData = await response.json();
 
       if (isDBIDCommand) {
-        setChatbotResponse(`${data.reply}\nData: ${JSON.stringify(data.data)}`);
+        setChatbotResponse(`${respData.reply}\nData: ${JSON.stringify(respData.data)}`);
       } else if (isUpdateCommand) {
-        setChatbotResponse(data.reply);
-        const affectedDiscipline = data.discipline;
+        setChatbotResponse(respData.reply);
+        const affectedDiscipline = respData.discipline;
         if (affectedDiscipline) {
           await handlePullData(affectedDiscipline);
         } else {
           await handlePullData();
         }
       } else if (isDateRangeCommand) {
-        setChatbotResponse(data.reply);
+        setChatbotResponse(respData.reply);
       } else if (!isViewerCommand) {
-        if (data.reply.includes("ha sido actualizado")) {
-          setChatbotResponse(data.reply);
+        if (respData.reply.includes("ha sido actualizado")) {
+          setChatbotResponse(respData.reply);
           setIsLoading(false);
-
-          const affectedDiscipline = data.discipline;
-          if (affectedDiscipline) {
-            await handlePullData(affectedDiscipline);
-          } else {
-            await handlePullData();
-          }
+          const affectedDiscipline = respData.discipline;
+          if (affectedDiscipline) await handlePullData(affectedDiscipline);
+          else await handlePullData();
           return;
         }
-        if (!data.reply.includes("No encontré elementos")) {
-          setChatbotResponse(data.reply);
+        if (!respData.reply.includes("No encontré elementos")) {
+          setChatbotResponse(respData.reply);
           setIsLoading(false);
           return;
         }
-        // Reintentar con todo el contexto
+        // Retry with full context
         const allData = await fetchAllData(cleanprojectId);
         response = await fetch(`${backendUrl}/ai-modeldata`, {
           method: "POST",
@@ -734,21 +745,21 @@ const AccModelDatabasePage = () => {
           }),
         });
 
-        data = await response.json();
-        setChatbotResponse(data.reply);
+        respData = await response.json();
+        setChatbotResponse(respData.reply);
       } else {
-        // Comando para el visor
-        setChatbotResponse(data.reply);
-        if (data.dbIds && data.action) {
-          switch (data.action) {
+        // Viewer command
+        setChatbotResponse(respData.reply);
+        if (respData.dbIds && respData.action) {
+          switch (respData.action) {
             case "isolate":
-              isolateObjectsInViewer(window.data4Dviewer, data.dbIds);
+              isolateObjectsInViewer(window.data4Dviewer, respData.dbIds);
               break;
             case "hide":
-              hideObjectsInViewer(window.data4Dviewer, data.dbIds);
+              hideObjectsInViewer(window.data4Dviewer, respData.dbIds);
               break;
             case "highlight":
-              highlightObjectsInViewer(window.data4Dviewer, data.dbIds);
+              highlightObjectsInViewer(window.data4Dviewer, respData.dbIds);
               break;
             default:
               break;
@@ -756,8 +767,6 @@ const AccModelDatabasePage = () => {
         }
       }
     } catch (error) {
-      console.error("Chatbot error:", error);
-      setChatbotResponse("There was an error processing your request.");
       console.error("Chatbot error:", error);
       setChatbotResponse("There was an error processing your request.");
     } finally {
@@ -770,7 +779,7 @@ const AccModelDatabasePage = () => {
   }
 
   if (error) {
-    return <div className="text-red-600">{error}</div>;
+    return <div className="text-red-600">{String(error)}</div>;
   }
 
   return (
@@ -780,7 +789,7 @@ const AccModelDatabasePage = () => {
           className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg"
           role="alert"
         >
-          <span className="font-medium">Error!</span> {error}
+          <span className="font-medium">Error!</span> {String(error)}
         </div>
       )}
 
@@ -799,7 +808,7 @@ const AccModelDatabasePage = () => {
             Project Home Page
           </h1>
           <h2 className="text-lg text-right font-semibold mb-4 text-gray-600">
-            {projectData.name}
+            {projectData?.name}
           </h2>
 
           <hr className="my-4 border-t border-gray-300" />
@@ -832,14 +841,14 @@ const AccModelDatabasePage = () => {
 
           <div className="h-12"></div>
 
-          {/* Viewer + Tabla + AI Panel */}
+          {/* Viewer + Table + AI Panel */}
           <div className="flex" style={{ height: "650px" }}>
             {/* Viewer */}
             <div
               className={`
-                  transition-all duration-300 overflow-hidden bg-white shadow-lg rounded-lg p-4 mr-2
-                  ${viewerWidthClass}
-                `}
+                transition-all duration-300 overflow-hidden bg-white shadow-lg rounded-lg p-4 mr-2
+                ${viewerWidthClass}
+              `}
             >
               {showViewer && (
                 <>
@@ -857,13 +866,13 @@ const AccModelDatabasePage = () => {
               )}
             </div>
 
-            {/* Tabla */}
+            {/* Table */}
             <div
               className={`
-                  transition-all duration-300 bg-white shadow-lg rounded-lg p-4 mr-2
-                  flex flex-col
-                  ${tableWidthClass}
-                `}
+                transition-all duration-300 bg-white shadow-lg rounded-lg p-4 mr-2
+                flex flex-col
+                ${tableWidthClass}
+              `}
             >
               <DatabaseTable
                 viewer={window.databaseviewer}
@@ -890,9 +899,9 @@ const AccModelDatabasePage = () => {
             {/* AI Panel */}
             <div
               className={`
-                  transition-all duration-300 overflow-hidden bg-white shadow-lg rounded-lg p-4 mr-2
-                  ${aiWidthClass}
-                `}
+                transition-all duration-300 overflow-hidden bg-white shadow-lg rounded-lg p-4 mr-2
+                ${aiWidthClass}
+              `}
             >
               {showAIpanel && (
                 <>

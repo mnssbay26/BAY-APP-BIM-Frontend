@@ -86,7 +86,12 @@ export const elementtype = [
 export const propertyMappings = {
   "General": {
     "Type Name": "TypeName",
+    "Name": "TypeName",
+    "Element Name": "TypeName",
+    "Item Name": "TypeName",
     Description: "Description",
+    "Long Description": "Description",
+    "Comments": "Description",
     Length: "Length",
     Width: "Width",
     Thickness: "Thickness",

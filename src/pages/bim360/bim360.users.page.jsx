@@ -26,6 +26,112 @@ const sampleQuestions = [
   "Show me the top 3 companies by user count.",
 ];
 
+/* ===================== CHAT RENDER HELPERS (v2) ===================== */
+const prettyCompany = (c) =>
+  c == null || c === "null" ? "Not specified" : String(c).replace(/_+/g, " ").trim();
+
+const isCompanyCountArray = (v) =>
+  Array.isArray(v) &&
+  v.length > 0 &&
+  v.every((x) => x && typeof x === "object" && "company" in x && "count" in x);
+
+const isUsersSlimArray = (v) =>
+  Array.isArray(v) &&
+  v.length >= 0 &&
+  v.every(
+    (u) =>
+      u && typeof u === "object" && "id" in u && "name" in u && "companyName" in u
+  );
+
+function ChatMessageContent({ value }) {
+  if (value == null) return null;
+
+  const t = typeof value;
+  if (t === "string") return <span className="whitespace-pre-wrap">{value}</span>;
+  if (t === "number" || t === "boolean")
+    return <span className="font-mono">{String(value)}</span>;
+
+  // Arrays
+  if (Array.isArray(value)) {
+    if (value.length === 0)
+      return <em className="text-gray-500">No results.</em>;
+
+    // [{ company, count }]
+    if (isCompanyCountArray(value)) {
+      const max = Math.max(...value.map((r) => Number(r.count) || 0));
+      return (
+        <div className="text-sm">
+          <div className="grid grid-cols-12 font-semibold border-b pb-1 mb-1">
+            <div className="col-span-1">#</div>
+            <div className="col-span-8">Company</div>
+            <div className="col-span-3 text-right">Count</div>
+          </div>
+          {value.map((r, idx) => {
+            const w = max ? Math.round(((Number(r.count) || 0) / max) * 100) : 0;
+            return (
+              <div
+                key={`${r.company ?? "null"}-${idx}`}
+                className="grid grid-cols-12 items-center py-1 border-b last:border-b-0"
+              >
+                <div className="col-span-1 text-gray-500">{idx + 1}</div>
+                <div className="col-span-8">
+                  <div className="truncate">{prettyCompany(r.company)}</div>
+                  <div className="h-1 bg-gray-200 rounded mt-1">
+                    <div
+                      className="h-1 rounded"
+                      style={{ width: `${w}%`, backgroundColor: "#60a5fa" }}
+                    />
+                  </div>
+                </div>
+                <div className="col-span-3 text-right font-mono">{r.count}</div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // [{ id, name, companyName }]
+    if (isUsersSlimArray(value)) {
+      return (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="text-left py-1 pr-2">Name</th>
+              <th className="text-left py-1 pr-2">Company</th>
+              <th className="text-left py-1 pr-2">ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            {value.map((u, i) => (
+              <tr key={u.id || i} className="border-b last:border-b-0">
+                <td className="py-1 pr-2">{u.name}</td>
+                <td className="py-1 pr-2">{prettyCompany(u.companyName)}</td>
+                <td className="py-1 pr-2 text-gray-500 font-mono">{u.id}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+
+    // Fallback elegante
+    return (
+      <pre className="whitespace-pre-wrap break-words text-xs">
+        {JSON.stringify(value, null, 2)}
+      </pre>
+    );
+  }
+
+  // Objetos sueltos -> fallback JSON legible
+  return (
+    <pre className="whitespace-pre-wrap break-words text-xs">
+      {JSON.stringify(value, null, 2)}
+    </pre>
+  );
+}
+/* ==================================================================== */
+
 const Bim360ProjectUsersPage = () => {
   // Get projectId and accountId from URL parameters
   const { projectId, accountId } = useParams();
@@ -67,33 +173,30 @@ const Bim360ProjectUsersPage = () => {
         let notSpecifiedCompanyCount = 0;
         let notSpecifiedRoleCount = 0;
 
-        if (projectData) {
-          setProjectData(projectData);
-        }
+        if (projectData) setProjectData(projectData);
 
         if (usersData && usersData.users) {
           setUsers(usersData.users);
-        }
-        if (usersData && usersData.users) {
           setTotalUsers(usersData.users.length);
+
+          usersData.users.forEach((user) => {
+            if (user.companyName) {
+              companies[user.companyName] =
+                (companies[user.companyName] || 0) + 1;
+            } else {
+              notSpecifiedCompanyCount++;
+            }
+
+            if (user.roles) {
+              user.roles.forEach((role) => {
+                roles[role.name] = (roles[role.name] || 0) + 1;
+              });
+            } else {
+              notSpecifiedRoleCount++;
+            }
+          });
         }
 
-        usersData.users.forEach((user) => {
-          if (user.companyName) {
-            companies[user.companyName] =
-              (companies[user.companyName] || 0) + 1;
-          } else {
-            notSpecifiedCompanyCount++;
-          }
-
-          if (user.roles) {
-            user.roles.forEach((role) => {
-              roles[role.name] = (roles[role.name] || 0) + 1;
-            });
-          } else {
-            notSpecifiedRoleCount++;
-          }
-        });
         setCompanyCounts(companies);
         setNotSpecifiedCompanyCount(notSpecifiedCompanyCount);
         setNotSpecifiedRoleCount(notSpecifiedRoleCount);
@@ -103,9 +206,7 @@ const Bim360ProjectUsersPage = () => {
         console.error("Error fetching users:", error);
         setError("Failed to load users. Please try again later.");
       })
-      .finally(() => {
-        setLoading(false);
-      });
+      .finally(() => setLoading(false));
   }, [projectId, accountId, cookies]);
 
   useEffect(() => {
@@ -127,14 +228,10 @@ const Bim360ProjectUsersPage = () => {
   }, [users, selectedCompany, selectedRole]);
 
   // Handle role click
-  const handleRoleClick = (role) => {
-    setSelectedRole(role);
-  };
+  const handleRoleClick = (role) => setSelectedRole(role);
 
   // Handle company click
-  const handleCompanyClick = (company) => {
-    setSelectedCompany(company);
-  };
+  const handleCompanyClick = (company) => setSelectedCompany(company);
 
   // Reset filters
   const resetFilters = () => {
@@ -192,7 +289,7 @@ const Bim360ProjectUsersPage = () => {
 
     // Write project name in cell B3
     worksheet.getCell("B3").value =
-      projectData.name || "No project name available";
+      projectData?.name || "No project name available";
     worksheet.getCell("B3").font = { bold: true };
 
     // Write date in cell B4
@@ -244,7 +341,7 @@ const Bim360ProjectUsersPage = () => {
   };
 
   const handleExportUsers = () => {
-    exportToExcel(filteredUsers, `project-${projectId}-users.xlsx`);
+    exportToExcel(); // usa el dataset actual; cambia si quieres filtrar
   };
 
   // chat handlers
@@ -288,7 +385,7 @@ const Bim360ProjectUsersPage = () => {
       const { answer } = await res.json();
       setMessages((m) => [
         ...m,
-        { role: "assistant", content: answer || "No answer" },
+        { role: "assistant", content: answer ?? "No answer" },
       ]);
     } catch (err) {
       setMessages((m) => [
@@ -299,12 +396,14 @@ const Bim360ProjectUsersPage = () => {
       setIsSendingMessage(false);
     }
   };
+
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
+
   const handleSampleQuestionClick = (q) => setUserMessage(q);
 
   if (loading) {
@@ -408,7 +507,7 @@ const Bim360ProjectUsersPage = () => {
                     <strong className="block mb-1">
                       {msg.role === "user" ? "You" : "Assistant"}
                     </strong>
-                    {msg.content}
+                    <ChatMessageContent value={msg.content} />
                   </div>
                 </div>
               ))}
@@ -463,4 +562,5 @@ const Bim360ProjectUsersPage = () => {
     </BayerBim360MainLayout>
   );
 };
+
 export default React.memo(Bim360ProjectUsersPage);

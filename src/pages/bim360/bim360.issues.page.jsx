@@ -38,6 +38,126 @@ const sampleQuestions = [
   "What is the ratio of issues per issueTypeName (e.g., Design vs. Coordination)?",
 ];
 
+/* ---------------- UI Helpers for AI messages ---------------- */
+
+const fmt = (v) => {
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
+};
+
+const copy = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    /* noop */
+  }
+};
+
+function renderAssistantContent(content) {
+  // Array -> lista o tabla
+  if (Array.isArray(content)) {
+    if (content.length === 0) return <em>Empty list</em>;
+
+    // Lista simple (strings/numbers)
+    if (typeof content[0] === "string" || typeof content[0] === "number") {
+      return (
+        <div>
+          <div className="text-xs mb-2">
+            <button
+              onClick={() => copy(content.join(", "))}
+              className="px-2 py-1 border rounded"
+              title="Copy list"
+            >
+              Copy list
+            </button>
+          </div>
+          <ul className="list-disc ml-5">
+            {content.map((x, i) => (
+              <li key={i}>{String(x)}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    // Tabla (array de objetos)
+    if (typeof content[0] === "object" && content[0] !== null) {
+      const cols = Array.from(
+        content.reduce((set, row) => {
+          Object.keys(row || {}).forEach((k) => set.add(k));
+          return set;
+        }, new Set())
+      );
+
+      return (
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-xs border">
+            <thead>
+              <tr className="bg-gray-100">
+                {cols.map((c) => (
+                  <th key={c} className="text-left px-2 py-1 border-b">
+                    {c}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {content.map((row, i) => (
+                <tr key={i} className="odd:bg-white even:bg-gray-50">
+                  {cols.map((c) => (
+                    <td key={c} className="px-2 py-1 align-top border-b">
+                      {fmt(row?.[c])}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="text-[10px] mt-1 text-gray-500">
+            Rows: {content.length}
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // String -> intenta parsear JSON para embellecer
+  if (typeof content === "string") {
+    const s = content.trim();
+
+    // Si parece JSON, parsea y reusa renderer
+    if (
+      (s.startsWith("{") && s.endsWith("}")) ||
+      (s.startsWith("[") && s.endsWith("]"))
+    ) {
+      try {
+        const parsed = JSON.parse(s);
+        return renderAssistantContent(parsed);
+      } catch {
+        /* fallthrough */
+      }
+    }
+
+    // Dejar como texto plano
+    return <span>{content}</span>;
+  }
+
+  // Objeto suelto (no debería llegar, pero lo soportamos)
+  if (typeof content === "object" && content !== null) {
+    return (
+      <pre className="text-xs whitespace-pre-wrap">
+        {JSON.stringify(content, null, 2)}
+      </pre>
+    );
+  }
+
+  // Fallback
+  return <span>{String(content)}</span>;
+}
+
+/* ---------------- Page ---------------- */
+
 const Bim360ProjectIssuesPage = () => {
   const { projectId, accountId } = useParams();
   const [cookies] = useState(document.cookie);
@@ -311,12 +431,18 @@ const Bim360ProjectIssuesPage = () => {
                           ? "bg-blue-100 text-blue-900"
                           : "bg-gray-200 text-gray-800"
                       }`}
-                      style={{ maxWidth: "80%", whiteSpace: "pre-wrap" }}
+                      style={{ maxWidth: "80%" }}
                     >
                       <strong className="block mb-1">
                         {msg.role === "user" ? "You" : "Assistant"}
                       </strong>
-                      {msg.content}
+
+                      {/* Renderer evita errores cuando answer es array/obj */}
+                      <div className="whitespace-pre-wrap">
+                        {msg.role === "assistant"
+                          ? renderAssistantContent(msg.content)
+                          : msg.content}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -365,10 +491,7 @@ const Bim360ProjectIssuesPage = () => {
               </div>
             </>
           ) : (
-            <IssuesTable
-              issues={displayedIssues}
-              customColumns={customTitles}
-            />
+            <IssuesTable issues={displayedIssues} customColumns={customTitles} />
           )}
         </section>
       </div>

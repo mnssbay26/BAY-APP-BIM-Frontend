@@ -30,6 +30,116 @@ const sampleQuestions = [
   "Which RFIs are due before today?",
 ];
 
+/* ---------- UI helpers for assistant messages ---------- */
+const fmt = (v) => {
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
+};
+
+const copyText = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    /* noop */
+  }
+};
+
+function renderAssistantContent(content) {
+  // Array
+  if (Array.isArray(content)) {
+    if (content.length === 0) return <em>Empty list</em>;
+
+    // array simple
+    if (typeof content[0] === "string" || typeof content[0] === "number") {
+      return (
+        <div>
+          <div className="text-xs mb-2">
+            <button
+              onClick={() => copyText(content.join(", "))}
+              className="px-2 py-1 border rounded"
+              title="Copy list"
+            >
+              Copy list
+            </button>
+          </div>
+          <ul className="list-disc ml-5">
+            {content.map((x, i) => (
+              <li key={i}>{String(x)}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    // array de objetos -> tabla
+    if (typeof content[0] === "object" && content[0] !== null) {
+      const cols = Array.from(
+        content.reduce((set, row) => {
+          Object.keys(row || {}).forEach((k) => set.add(k));
+          return set;
+        }, new Set())
+      );
+      return (
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-xs border">
+            <thead>
+              <tr className="bg-gray-100">
+                {cols.map((c) => (
+                  <th key={c} className="text-left px-2 py-1 border-b">
+                    {c}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {content.map((row, i) => (
+                <tr key={i} className="odd:bg-white even:bg-gray-50">
+                  {cols.map((c) => (
+                    <td key={c} className="px-2 py-1 align-top border-b">
+                      {fmt(row?.[c])}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="text-[10px] mt-1 text-gray-500">Rows: {content.length}</div>
+        </div>
+      );
+    }
+  }
+
+  // String -> intenta JSON
+  if (typeof content === "string") {
+    const s = content.trim();
+    if (
+      (s.startsWith("{") && s.endsWith("}")) ||
+      (s.startsWith("[") && s.endsWith("]"))
+    ) {
+      try {
+        const parsed = JSON.parse(s);
+        return renderAssistantContent(parsed);
+      } catch {
+        /* fallthrough */
+      }
+    }
+    return <span>{content}</span>;
+  }
+
+  // objeto suelto
+  if (typeof content === "object" && content !== null) {
+    return (
+      <pre className="text-xs whitespace-pre-wrap">
+        {JSON.stringify(content, null, 2)}
+      </pre>
+    );
+  }
+
+  return <span>{String(content)}</span>;
+}
+/* ------------------------------------------------------- */
+
 const AccProjectRfisPage = () => {
   // Extract projectId and accountId from URL parameters
   const { projectId, accountId } = useParams();
@@ -286,10 +396,7 @@ const AccProjectRfisPage = () => {
             {dataContainers.map((c) => (
               <div key={c.title} className="p-4">
                 <h3 className="text-lg font-semibold mb-2">{c.title}</h3>
-                <c.chart
-                  data={c.data}
-                  onSliceClick={(v) => handleFilterClick(c.filterKey, v)}
-                />
+                <c.chart data={c.data} onSliceClick={c.onClickName} />
                 <div className="text-xs mt-2 overflow-y-auto max-h-32">
                   {Object.entries(c.data).map(([k, v]) => (
                     <p key={k}>{`${k}: ${v}`}</p>
@@ -326,7 +433,11 @@ const AccProjectRfisPage = () => {
                       <strong className="block mb-1">
                         {msg.role === "user" ? "You" : "Assistant"}
                       </strong>
-                      {msg.content}
+                      <div className="whitespace-pre-wrap">
+                        {msg.role === "assistant"
+                          ? renderAssistantContent(msg.content)
+                          : msg.content}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -382,4 +493,5 @@ const AccProjectRfisPage = () => {
     </BayerAccMainLayout>
   );
 };
+
 export default React.memo(AccProjectRfisPage);

@@ -7,19 +7,75 @@ class CategorySelectionExtension extends Autodesk.Viewing.Extension {
     this._button = null;
   }
 
-  load() {
-    //console.log("Category Selection Extension has been loaded.");
+  load() { return true; }
+  unload() {
+    if (this._button) { this._group.removeControl(this._button); this._button = null; }
     return true;
   }
 
-  unload() {
-    if (this._button) {
-      this._group.removeControl(this._button);
-      this._button = null;
+  // ---------- helpers ----------
+  _getProps = (id) => new Promise((resolve) => {
+    this.viewer.getProperties(id, (data) => resolve(data || { properties: [] }));
+  });
+
+  _collectHierarchyProps = async (dbId, maxLevels = 6) => {
+    const tree = this.viewer.model?.getData()?.instanceTree;
+    const flat = {};
+    let current = dbId, level = 0;
+
+    while (current != null && current !== -1 && level < maxLevels) {
+      const data = await this._getProps(current);
+      (data.properties || []).forEach(p => {
+        const k = p.displayName, v = (p.displayValue ?? "").toString();
+        if (flat[k] === undefined) flat[k] = v;
+      });
+      if (tree?.getNodeName && !flat["NodeName"]) {
+        flat["NodeName"] = tree.getNodeName(current) || "";
+      }
+      current = tree?.getNodeParentId ? tree.getNodeParentId(current) : null;
+      level++;
     }
-    //console.log("Category Selection Extension has been downloaded.");
-    return true;
-  }
+    return flat;
+  };
+
+  _norm = (s) => (s || "").toString().replace(/\s*\[.*?\]\s*/g, "").trim().toLowerCase();
+
+  _extractCategoryFromFlat = (flat) => {
+    // orden de preferencia + sinónimos típicos en NWD
+    const keys = ["Category", "Category Name", "Family", "Type"];
+    for (const k of keys) {
+      if (flat[k]) return this._norm(flat[k]);
+    }
+    // fallback: a veces el nombre del nodo ya es la familia/categoría
+    if (flat.NodeName) return this._norm(flat.NodeName);
+    return "";
+  };
+
+  _getAllDescendants = (tree, parentId, out) => {
+    tree.enumNodeChildren(parentId, (cid) => {
+      out.push(cid);
+      this._getAllDescendants(tree, cid, out);
+    });
+  };
+
+  _getVisibleNodes = () => {
+    const tree = this.viewer.model.getData().instanceTree;
+    const root = tree.getRootId();
+    const all = [];
+    this._getAllDescendants(tree, root, all);
+
+    const vm =
+      (this.viewer.impl && this.viewer.impl.visibilityManager) ||
+      (this.viewer.model?.getVisibilityManager?.());
+    if (!vm) return all;
+
+    const visible = [];
+    for (const id of all) {
+      try { if (vm.getNodeVisibility(id)) visible.push(id); }
+      catch { /* ignore */ }
+    }
+    return visible;
+  };
 
   onToolbarCreated() {
     this._group =
@@ -28,96 +84,44 @@ class CategorySelectionExtension extends Autodesk.Viewing.Extension {
     this.viewer.toolbar.addControl(this._group);
 
     this._button = new Autodesk.Viewing.UI.Button("selectCategoryButton");
-    this._button.onClick = () => {
-      const selection = this.viewer.getSelection();
-      if (!selection || selection.length === 0) {
-        console.warn("No selected elements.");
-        return;
-      }
+    this._button.setToolTip("Aislar por Categoría (tolerante NWD)");
+    this._button.addClass("selectCategoryIcon");
 
-      const baseDbId = selection[0];
+    this._button.onClick = async () => {
+      const sel = this.viewer.getSelection();
+      if (!sel || sel.length === 0) { console.warn("No elements selected."); return; }
 
-      this.viewer.getProperties(baseDbId, (result) => {
-        let categoryValue = null;
-        result.properties.forEach((prop) => {
-          if (prop.displayName === "Category") {
-            categoryValue = prop.displayValue;
-          }
-        });
+      // 1) Tomar la categoría de referencia subiendo en la jerarquía
+      const baseId = sel[0];
+      const flat = await this._collectHierarchyProps(baseId, 6);
+      const refCat = this._extractCategoryFromFlat(flat);
+      if (!refCat) { console.warn("No Category found in hierarchy."); return; }
 
-        if (!categoryValue) {
-          console.warn("The selected element not contain'Category' parameter.");
-          return;
-        }
-
-        //console.log("Category reference: ", categoryValue);
-
-        const instanceTree = this.viewer.model.getData().instanceTree;
-        if (!instanceTree) {
-          console.error("Not tree of instances loaded.");
-          return;
-        }
-
-        let allDbIds = [];
-        instanceTree.enumNodeChildren(instanceTree.getRootId(), (dbId) => {
-          allDbIds.push(dbId);
-        });
-
-        const implVisibilityMgr =
-          (this.viewer.impl && this.viewer.impl.visibilityManager) ||
-          (this.viewer.model &&
-            this.viewer.model.getVisibilityManager &&
-            this.viewer.model.getVisibilityManager());
-
-        let visibleDbIds = [];
-        if (!implVisibilityMgr) {
-          console.warn(
-            "No se encontró un visibilityManager. Se considerarán todos los elementos como visibles."
-          );
-          visibleDbIds = allDbIds;
-        } else {
-          visibleDbIds = allDbIds.filter((dbId) => {
-            try {
-              return implVisibilityMgr.getNodeVisibility(dbId);
-            } catch (error) {
-              console.warn(
-                "Error al obtener la visibilidad del nodo:",
-                dbId,
-                error
-              );
-              return false;
-            }
-          });
-        }
-
-        //console.log("Total de elementos visibles: ", visibleDbIds.length);
-
-        this.viewer.model.getBulkProperties(
-          visibleDbIds,
-          ["Category"],
-          (items) => {
-            let similarCategoryIds = [];
-            items.forEach((item) => {
-              let catValue = null;
-              item.properties.forEach((prop) => {
-                if (prop.displayName === "Category") {
-                  catValue = prop.displayValue;
-                }
-              });
-              if (catValue === categoryValue) {
-                similarCategoryIds.push(item.dbId);
+      // 2) Buscar en nodos visibles usando sinónimos
+      const targetDbIds = this._getVisibleNodes();
+      const propsToAsk = ["Category", "Category Name", "Family", "Type", "Name"];
+      this.viewer.model.getBulkProperties(
+        targetDbIds,
+        propsToAsk,
+        (items) => {
+          const matches = [];
+          for (const it of items) {
+            let found = "";
+            for (const p of it.properties || []) {
+              if (["Category", "Category Name", "Family", "Type", "Name"].includes(p.displayName)) {
+                const n = this._norm(p.displayValue);
+                // compara contra ref (ej. "generic models")
+                if (n && (n === refCat)) { found = n; break; }
               }
-            });
-            //console.log( "Se encontraron " + similarCategoryIds.length + " elementos de la misma categoría (visibles)." );
-
-            this.viewer.isolate(similarCategoryIds);
+            }
+            if (found) matches.push(it.dbId);
           }
-        );
-      });
+          if (matches.length === 0) { console.warn("No visible elements for that category."); }
+          this.viewer.isolate(matches);
+        }
+      );
     };
 
-    this._button.setToolTip("Aislar elementos por categoría (solo visibles)");
-    this._button.addClass("selectCategoryIcon");
     this._group.addControl(this._button);
   }
 }
