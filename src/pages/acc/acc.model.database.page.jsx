@@ -728,7 +728,7 @@ const AccModelDatabasePage = () => {
           else await handlePullData();
           return;
         }
-        if (!respData.reply.includes("No encontré elementos")) {
+        if (!respData.reply.includes("No encontré  elementos")) {
           setChatbotResponse(respData.reply);
           setIsLoading(false);
           return;
