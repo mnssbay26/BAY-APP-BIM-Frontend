@@ -38,6 +38,9 @@ const Bim360DigitalTwin = () => {
   const [showViewer, setShowViewer] = useState(true);
   const [isPullMenuOpen, setIsPullMenuOpen] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState(null);
+  const hasFederatedModel =
+    typeof federatedModel === "string" && federatedModel.trim().length > 0;
+  const errorMessage = error instanceof Error ? error.message : error;
 
   useEffect(() => {
     setLoading(true);
@@ -72,11 +75,15 @@ const Bim360DigitalTwin = () => {
   };
 
   useEffect(() => {
-    if (!federatedModel || window.viewerInitialized) return;
+    if (!hasFederatedModel) {
+      window.viewerInitialized = false;
+      return;
+    }
+
+    if (window.viewerInitialized) return;
 
     digitalTwinViewer({
       federatedModel,
-    
       projectId: projectId,
       extensionOptions: {
         onSpriteClick: handleSpriteClick,
@@ -85,7 +92,18 @@ const Bim360DigitalTwin = () => {
     });
 
     window.viewerInitialized = true;
-  }, [federatedModel, projectId]);
+    return () => {
+      if (
+        window.database7DViewer &&
+        typeof window.database7DViewer.finish === "function"
+      ) {
+        window.database7DViewer.finish();
+      }
+
+      window.database7DViewer = null;
+      window.viewerInitialized = false;
+    };
+  }, [hasFederatedModel, federatedModel, projectId]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -102,7 +120,7 @@ const Bim360DigitalTwin = () => {
     }
   
     if (error) {
-      return <div className="text-red-600">{error}</div>;
+      return <div className="text-red-600">{errorMessage}</div>;
     }
 
   return (
@@ -112,86 +130,79 @@ const Bim360DigitalTwin = () => {
           className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg"
           role="alert"
         >
-          <span className="font-medium">Error!</span> {error}
+          <span className="font-medium">Error!</span> {errorMessage}
         </div>
       )}
 
-      {!federatedModel && !error && (
+      <h1 className="text-2xl text-right font-bold mb-1 text-gray-800">
+        Project Home Page
+      </h1>
+      <h2 className="text-lg text-right font-semibold mb-4 text-gray-600">
+        {projectData?.name}
+      </h2>
+
+      <hr className="my-4 border-t border-gray-300" />
+
+      {/* Viewer + Charts container */}
+      <div className="flex" style={{ height: "650px" }}>
+        {/* Viewer column */}
         <div
-          className="p-4 mb-4 text-sm text-yellow-700 bg-yellow-100 rounded-lg"
-          role="alert"
+          className={`
+              transition-all duration-300 overflow-hidden bg-white 
+              shadow-lg rounded-lg p-4 mr-2
+              ${showViewer ? "w-3/6" : "w-0"}
+            `}
         >
-          Model data could not be loaded.
-        </div>
-      )}
-
-      {federatedModel && (
-        <>
-          <h1 className="text-2xl text-right font-bold mb-1 text-gray-800">
-            Project Home Page
-          </h1>
-          <h2 className="text-lg text-right font-semibold mb-4 text-gray-600">
-            {projectData.name}
-          </h2>
-
-          <hr className="my-4 border-t border-gray-300" />
-
-          {/* Viewer + Charts container */}
-          <div className="flex" style={{ height: "650px" }}>
-            {/* Viewer column */}
-            <div
-              className={`
-                  transition-all duration-300 overflow-hidden bg-white 
-                  shadow-lg rounded-lg p-4 mr-2
-                  ${showViewer ? "w-3/6" : "w-0"}
-                `}
+          <div className="flex justify-between items-center mb-2">
+            <h2
+              className={`text-xl font-bold transition-opacity duration-300 ${
+                showViewer ? "opacity-100" : "opacity-0"
+              }`}
             >
-              <div className="flex justify-between items-center mb-2">
-                <h2
-                  className={`text-xl font-bold transition-opacity duration-300 ${
-                    showViewer ? "opacity-100" : "opacity-0"
-                  }`}
-                >
-                  Model Viewer
-                </h2>
-              </div>
-              <hr className="my-4 border-t border-gray-300" />
+              Model Viewer
+            </h2>
+          </div>
+          <hr className="my-4 border-t border-gray-300" />
+          <div
+            className={`relative ${showViewer ? "block" : "hidden"}`}
+            style={{ height: "550px" }}
+          >
+            {hasFederatedModel ? (
               <div
-                className={`relative ${showViewer ? "block" : "hidden"}`}
-                style={{ height: "550px" }}
-              >
-                <div
-                  className="absolute top-0 left-0 right-0 bottom-0"
-                  id="BAYDigitalTwinViewer"
-                />
+                className="absolute top-0 left-0 right-0 bottom-0"
+                id="BAYDigitalTwinViewer"
+              />
+            ) : (
+              <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 px-6 text-center text-sm text-gray-600">
+                No federated model found for this project.
               </div>
-            </div>
+            )}
+          </div>
+        </div>
 
-            {/* Charts container */}
-            <div className="w-3/6 border-l border-gray-300 p-1">
-              <div className="flex flex-col w-full" style={{ height: "700px" }}>
-                {/* 1/3 - Temperature */}
-                <div className="flex-1 mb-1">
-                  <h2 className="font-bold text-sm">Real-Time Temperature</h2>
-                  <RealTimeChart selectedDevice={selectedDevice} />
-                </div>
-                {/* 2/3 - Energy */}
-                <div className="flex-1 mb-1">
-                  <h2 className="font-bold text-sm">
-                    Real-Time Energy Consumption
-                  </h2>
-                  <DevicePowerChart selectedDevice={selectedDevice} />
-                </div>
-                {/* 3/3 - Water */}
-                <div className="flex-1 mb-1">
-                  <h2 className="font-bold text-sm">Real-Time Humidity</h2>
-                  <DeviceWaterChart selectedDevice={selectedDevice} />
-                </div>
-              </div>
+        {/* Charts container */}
+        <div className="w-3/6 border-l border-gray-300 p-1">
+          <div className="flex flex-col w-full" style={{ height: "700px" }}>
+            {/* 1/3 - Temperature */}
+            <div className="flex-1 mb-1">
+              <h2 className="font-bold text-sm">Real-Time Temperature</h2>
+              <RealTimeChart selectedDevice={selectedDevice} />
+            </div>
+            {/* 2/3 - Energy */}
+            <div className="flex-1 mb-1">
+              <h2 className="font-bold text-sm">
+                Real-Time Energy Consumption
+              </h2>
+              <DevicePowerChart selectedDevice={selectedDevice} />
+            </div>
+            {/* 3/3 - Water */}
+            <div className="flex-1 mb-1">
+              <h2 className="font-bold text-sm">Real-Time Humidity</h2>
+              <DeviceWaterChart selectedDevice={selectedDevice} />
             </div>
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </BayerBim360MainLayout>
   );
 };

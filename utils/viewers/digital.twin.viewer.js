@@ -14,6 +14,22 @@ export async function digitalTwinViewer({
   projectId,
   extensionOptions,
 }) {
+  const validFederatedModel =
+    typeof federatedModel === "string" ? federatedModel.trim() : "";
+
+  if (!validFederatedModel) {
+    window.viewerInitialized = false;
+    return;
+  }
+
+  const viewerContainer = document.getElementById("BAYDigitalTwinViewer");
+
+  if (!viewerContainer) {
+    window.viewerInitialized = false;
+    console.warn("Digital Twin viewer container not found.");
+    return;
+  }
+
   console.log("extension", extensionOptions);
   console.log("projectId", extensionOptions.projectId);
 
@@ -26,7 +42,6 @@ export async function digitalTwinViewer({
     accessToken: data.access_token,
   };
 
-  const viewerContainer = document.getElementById("BAYDigitalTwinViewer");
   let viewer = new Autodesk.Viewing.GuiViewer3D(viewerContainer);
 
   Autodesk.Viewing.Initializer(
@@ -45,7 +60,7 @@ export async function digitalTwinViewer({
         Autodesk.Viewing.SelectionMode.MULTIPLE_SELECTION
       );
 
-      const documentId = `urn:${federatedModel}`;
+      const documentId = `urn:${validFederatedModel}`;
 
       Autodesk.Viewing.Document.load(documentId, async (viewerDocument) => {
         let defaultModel = viewerDocument.getRoot().getDefaultGeometry();

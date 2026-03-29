@@ -58,6 +58,10 @@ export const fetchBim360FederatedModel = async (projectId, accountId) => {
       }
     );
 
+    if (response.status === 404) {
+      return null;
+    }
+
     if (!response.ok) {
       throw new Error("Failed to fetch BIM 360 federated model");
     }
@@ -68,6 +72,10 @@ export const fetchBim360FederatedModel = async (projectId, accountId) => {
 
     return data.federatedmodel ? await toBase64(data.federatedmodel) : null;
   } catch (error) {
+    if (error?.status === 404) {
+      return null;
+    }
+
     console.error("Error fetching BIM 360 federated model:", error);
     throw error;
   }
