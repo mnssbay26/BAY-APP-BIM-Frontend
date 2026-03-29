@@ -172,3 +172,60 @@ export const fetchAccProjectSubmittals = async (projectId, accountId) => {
     throw error;
   }
 };
+
+// ─── Assets ──────────────────────────────────────────────────────────────────
+
+/**
+ * Obtiene assets enriquecidos con paginación
+ * Backend: GET /acc/projects/:accountId/:projectId/assets
+ */
+export const getAssetsEnriched = async (accountId, projectId, params = {}) => {
+  try {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") query.append(k, v);
+    });
+    const qs = query.toString();
+    const response = await fetch(
+      `${backendUrl}/acc/projects/${accountId}/${projectId}/assets${qs ? `?${qs}` : ""}`,
+      {
+        method: "GET",
+        credentials: "include",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch ACC project assets");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching ACC project assets:", error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene resumen agregado para charts
+ * Backend: GET /acc/projects/:accountId/:projectId/assets/summary
+ */
+export const getAssetsSummary = async (accountId, projectId) => {
+  try {
+    const response = await fetch(
+      `${backendUrl}/acc/projects/${accountId}/${projectId}/assets/summary`,
+      {
+        method: "GET",
+        credentials: "include",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch ACC project assets summary");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching ACC project assets summary:", error);
+    throw error;
+  }
+};

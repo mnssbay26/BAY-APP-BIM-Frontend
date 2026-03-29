@@ -4,6 +4,10 @@ export const authorizedUsers = [
     email: "enrique.meneses@bayer.com",
   },
   {
+    name: "Enrique Meneses",
+    email: "enrique.meneses.arq@outlook.com",
+  },
+  {
     name: "Michael Blankenship",
     email: "michael.blankenship@bayer.com",
   },

@@ -54,6 +54,11 @@ function BayerAccSidebar() {
       icon: FaFileAlt,
       label: "Submittals Report",
     },
+    {
+      to: `/acc/projects/${accountId}/${projectId}/assets`,
+      icon: FaLayerGroup,
+      label: "Assets Report",
+    },
   ]
   const foldersAndFilesItems = [
     {

@@ -49,6 +49,11 @@ function BayerBim360Sidebar() {
       icon: FaEnvelope,
       label: "RFI Report",
     },
+    {
+      to: `/bim360/projects/${accountId}/${projectId}/assets`,
+      icon: FaLayerGroup,
+      label: "Assets Report",
+    },
   ]
   const foldersAndFilesItems = [
     {
