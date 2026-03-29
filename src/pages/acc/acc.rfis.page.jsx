@@ -1,10 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 
-import Slider from "react-slick";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
-
 import BayerAccMainLayout from "@/components/platform_general_components/acc_components/acc.main.layout.jsx";
 import BayerLoadingOverlay from "@/components/general/general.pages.loading.jsx";
 
@@ -17,8 +13,6 @@ import RFITable from "../../components/rfis_components/acc.rfis.table.jsx";
 import RFIsDisciplineChart from "../../components/rfis_components/acc.rfis.discipline.chart.jsx";
 import RFIsPriorityChart from "../../components/rfis_components/acc.rfis.priority.chart.jsx";
 import RFIsStatusChart from "../../components/rfis_components/acc.rfis.status.chart.jsx";
-
-import { reportsSliderSettings } from "../utils/project.slider.settings.utils.js";
 
 const backendUrl = import.meta.env.VITE_API_BACKEND_BASE_URL;
 
@@ -173,6 +167,8 @@ const AccProjectRfisPage = () => {
     priority: null,
     discipline: null,
   });
+
+  const [activeSlide, setActiveSlide] = useState(0);
 
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -389,22 +385,36 @@ const AccProjectRfisPage = () => {
         </button>
       </div>
 
-      <div className="flex max-h-[775px] mb-8">
+      <div className="flex mb-8">
         {/* Charts Carousel */}
-        <section className="w-1/4 bg-gray-50 p-2 mr-4 rounded-lg shadow">
-          <Slider {...reportsSliderSettings()}>
-            {dataContainers.map((c) => (
-              <div key={c.title} className="p-4">
-                <h3 className="text-lg font-semibold mb-2">{c.title}</h3>
-                <c.chart data={c.data} onSliceClick={c.onClickName} />
-                <div className="text-xs mt-2 overflow-y-auto max-h-32">
-                  {Object.entries(c.data).map(([k, v]) => (
-                    <p key={k}>{`${k}: ${v}`}</p>
-                  ))}
-                </div>
+        <section className="w-1/4 bg-gray-50 p-2 mr-4 rounded-lg shadow overflow-hidden flex flex-col">
+          <div className="flex flex-col flex-1">
+            <div className="p-3">
+              <h3 className="text-sm font-semibold mb-2">
+                {dataContainers[activeSlide].title}
+              </h3>
+              {React.createElement(dataContainers[activeSlide].chart, {
+                data: dataContainers[activeSlide].data,
+                onSliceClick: dataContainers[activeSlide].onClickName,
+              })}
+              <div className="text-xs mt-2">
+                {Object.entries(dataContainers[activeSlide].data).map(([k, v]) => (
+                  <p key={k}>{`${k}: ${v}`}</p>
+                ))}
               </div>
-            ))}
-          </Slider>
+            </div>
+            <div className="flex justify-center items-center gap-2 py-2 mt-auto">
+              {dataContainers.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveSlide(i)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    i === activeSlide ? "bg-blue-600" : "bg-gray-300"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
         </section>
 
         {/* Table or Chat */}

@@ -181,6 +181,30 @@ export const fetchAccProjectSubmittals = async (projectId, accountId) => {
   }
 };
 
+// ─── Companies ───────────────────────────────────────────────────────────────
+
+export const fetchAccProjectCompanies = async (projectId, accountId) => {
+  try {
+    const response = await fetch(
+      `${backendUrl}/acc/projects/${accountId}/${projectId}/companies`,
+      {
+        method: "GET",
+        credentials: "include",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch ACC project companies");
+    }
+
+    const { data } = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching ACC project companies:", error);
+    throw error;
+  }
+};
+
 // ─── Assets ──────────────────────────────────────────────────────────────────
 
 /**

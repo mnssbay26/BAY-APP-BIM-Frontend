@@ -16,6 +16,7 @@ import AccProjectFolderPermitsPage from "./pages/acc/acc.folder.permits.page.jsx
 import AccModelDatabasePage from "./pages/acc/acc.model.database.page.jsx";
 import AccDigitalTwin from "./pages/acc/acc.digital.twin.page";
 import AccProjectAssetsPage from "./pages/acc/acc.assets.page.jsx";
+import AccProjectCompaniesPage from "./pages/acc/acc.companies.page.jsx";
 
 import Bim360ProjectsPage from "./pages/bim360/bim360.projects.page.jsx";
 import Bim360GeneralReportPage from "./pages/bim360/bim360.general.report.page.jsx";
@@ -27,6 +28,7 @@ import Bim360ProjectFolderPermitsPage from "./pages/bim360/bim360.folder.permits
 import Bim360ModelDatabasePage from "./pages/bim360/bim360.model.database.page";
 import Bim360DigitalTwin from "./pages/bim360/bim360.digital.twin.page"
 import Bim360ProjectAssetsPage from "./pages/bim360/bim360.assets.page.jsx";
+import Bim360ProjectCompaniesPage from "./pages/bim360/bim360.companies.page.jsx";
 
 import UnauthorizedPage from "./pages/general/UnaurhorizedPage.jsx";
 import NotFoundPage from "./pages/general/NotFoundPage";
@@ -79,6 +81,10 @@ function App() {
             path="/acc/projects/:accountId/:projectId/assets"
             element={<AccProjectAssetsPage />}
           />
+          <Route
+            path="/acc/projects/:accountId/:projectId/companies"
+            element={<AccProjectCompaniesPage />}
+          />
 
           {/* BIM 360 */}
           <Route path="/bim360/projects/" element={<Bim360ProjectsPage />} />
@@ -114,6 +120,10 @@ function App() {
           <Route
             path="/bim360/projects/:accountId/:projectId/assets"
             element={<Bim360ProjectAssetsPage />}
+          />
+          <Route
+            path="/bim360/projects/:accountId/:projectId/companies"
+            element={<Bim360ProjectCompaniesPage />}
           />
 
           {/* Catch-all route for 404 */}

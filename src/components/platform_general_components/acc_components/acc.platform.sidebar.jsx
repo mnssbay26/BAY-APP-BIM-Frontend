@@ -59,6 +59,11 @@ function BayerAccSidebar() {
       icon: FaLayerGroup,
       label: "Assets Report",
     },
+    {
+      to: `/acc/projects/${accountId}/${projectId}/companies`,
+      icon: FaProjectDiagram,
+      label: "Companies Report",
+    },
   ]
   const foldersAndFilesItems = [
     {

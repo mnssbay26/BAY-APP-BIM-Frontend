@@ -131,6 +131,28 @@ export const fetchBim360ProjectIssues = async (projectId, accountId) => {
   }
 };
 
+export const fetchBim360ProjectCompanies = async (projectId, accountId) => {
+  try {
+    const response = await fetch(
+      `${backendUrl}/bim360/projects/${accountId}/${projectId}/companies`,
+      {
+        method: "GET",
+        credentials: "include",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch BIM360 project companies");
+    }
+
+    const { data } = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching BIM360 project companies:", error);
+    throw error;
+  }
+};
+
 export const fetchBim360ProjectRfis = async (projectId, accountId) => {
   try {
     const response = await fetch(

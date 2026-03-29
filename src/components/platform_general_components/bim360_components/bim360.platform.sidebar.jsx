@@ -54,6 +54,11 @@ function BayerBim360Sidebar() {
       icon: FaLayerGroup,
       label: "Assets Report",
     },
+    {
+      to: `/bim360/projects/${accountId}/${projectId}/companies`,
+      icon: FaProjectDiagram,
+      label: "Companies Report",
+    },
   ]
   const foldersAndFilesItems = [
     {
