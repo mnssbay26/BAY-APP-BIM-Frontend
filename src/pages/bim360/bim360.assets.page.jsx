@@ -6,6 +6,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 import { ResponsiveBar } from "@nivo/bar";
+//companies
 
 import BayerBim360MainLayout from "@/components/platform_general_components/bim360_components/bim360.main.layout.jsx";
 import BayerLoadingOverlay from "@/components/general/general.pages.loading.jsx";
