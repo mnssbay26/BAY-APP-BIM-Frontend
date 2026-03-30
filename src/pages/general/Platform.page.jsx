@@ -19,7 +19,7 @@ const PlatformPage = () => {
   const goToBim360 = () => navigate('/bim360/projects' + search);
 
   /**
-   * Navigate to ACC projects list.
+   * Navigate to ACC all projects list.
    */
   const goToAcc = () => navigate('/acc/projects' + search);
 
